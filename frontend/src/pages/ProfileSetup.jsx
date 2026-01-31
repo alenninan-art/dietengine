@@ -1,0 +1,344 @@
+import { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { User, Scale, Ruler, Calendar, Activity, Target, ArrowRight, LayoutDashboard, Utensils, Brain, MessageSquare } from 'lucide-react';
+import axios from 'axios';
+
+const api = axios.create({
+    baseURL: 'http://127.0.0.1:8000',
+});
+
+api.interceptors.request.use((config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+});
+
+export default function ProfileSetup() {
+    const { user, logout } = useAuth();
+    const navigate = useNavigate();
+    const [formData, setFormData] = useState({
+        full_name: '',
+        age: '',
+        height: '',
+        weight: '',
+        gender: '',
+        activity_level: '',
+        health_goals: ''
+    });
+    const [bmi, setBmi] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const [success, setSuccess] = useState(false);
+
+    useEffect(() => {
+        if (user) {
+            setFormData({
+                full_name: user.full_name || '',
+                age: user.age || '',
+                height: user.height || '',
+                weight: user.weight || '',
+                gender: user.gender || '',
+                activity_level: user.activity_level || '',
+                health_goals: user.health_goals || ''
+            });
+
+            // Fetch BMI if height and weight are set
+            if (user.height && user.weight) {
+                fetchBMI();
+            }
+        }
+    }, [user]);
+
+    const fetchBMI = async () => {
+        try {
+            const response = await api.get('/profile/bmi');
+            setBmi(response.data);
+        } catch (error) {
+            console.error('Failed to fetch BMI:', error);
+        }
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        setSuccess(false);
+
+        try {
+            const dataToSend = {
+                full_name: formData.full_name || null,
+                age: formData.age ? parseInt(formData.age) : null,
+                height: formData.height ? parseFloat(formData.height) : null,
+                weight: formData.weight ? parseFloat(formData.weight) : null,
+                gender: formData.gender || null,
+                activity_level: formData.activity_level || null,
+                health_goals: formData.health_goals || null
+            };
+
+            await api.put('/profile/', dataToSend);
+            setSuccess(true);
+
+            // Fetch updated BMI if height and weight are set
+            if (formData.height && formData.weight) {
+                await fetchBMI();
+            }
+        } catch (error) {
+            console.error('Failed to update profile:', error);
+            alert('Failed to update profile. Please try again.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleChange = (e) => {
+        setFormData({
+            ...formData,
+            [e.target.name]: e.target.value
+        });
+    };
+
+    return (
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8 animate-fade-in">
+            <div className="max-w-4xl mx-auto">
+                {/* Header */}
+                <div className="bg-white rounded-lg shadow-md p-6 mb-6 animate-slide-up">
+                    <div className="flex justify-between items-center">
+                        <div>
+                            <h1 className="text-3xl font-bold text-gray-800">Profile Setup</h1>
+                            <p className="text-gray-600">Complete your health profile for personalized recommendations</p>
+                        </div>
+                        <button
+                            onClick={logout}
+                            className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition shadow-md"
+                        >
+                            Logout
+                        </button>
+                    </div>
+                </div>
+
+                <div className="grid md:grid-cols-3 gap-6">
+                    {/* Profile Form */}
+                    <div className="md:col-span-2 bg-white rounded-lg shadow-md p-6 animate-slide-up" style={{ animationDelay: '100ms' }}>
+                        <h2 className="text-2xl font-bold text-gray-800 mb-6">Your Information</h2>
+
+                        {success && (
+                            <div className="mb-6 animate-pop">
+                                <div className="p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg mb-4 flex items-center justify-between shadow-sm">
+                                    <span>Profile updated successfully!</span>
+                                    <button
+                                        onClick={() => navigate('/recommendations')}
+                                        className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-green-700 transition flex items-center gap-2"
+                                    >
+                                        <ArrowRight className="w-4 h-4" />
+                                        Continue to Dashboard
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div className="animate-slide-up" style={{ animationDelay: '200ms' }}>
+                                <label className="block text-gray-700 font-medium mb-2">
+                                    <User className="inline w-5 h-5 mr-2 animate-pop" />
+                                    Full Name
+                                </label>
+                                <input
+                                    type="text"
+                                    name="full_name"
+                                    value={formData.full_name}
+                                    onChange={handleChange}
+                                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                                    placeholder="Enter your full name"
+                                />
+                            </div>
+
+                            <div className="grid md:grid-cols-2 gap-4">
+                                <div className="animate-slide-up" style={{ animationDelay: '300ms' }}>
+                                    <label className="block text-gray-700 font-medium mb-2">
+                                        <Calendar className="inline w-5 h-5 mr-2 animate-pop" />
+                                        Age
+                                    </label>
+                                    <input
+                                        type="number"
+                                        name="age"
+                                        value={formData.age}
+                                        onChange={handleChange}
+                                        className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                                        placeholder="Age"
+                                        min="1"
+                                        max="120"
+                                    />
+                                </div>
+
+                                <div className="animate-slide-up" style={{ animationDelay: '350ms' }}>
+                                    <label className="block text-gray-700 font-medium mb-2">
+                                        Gender
+                                    </label>
+                                    <select
+                                        name="gender"
+                                        value={formData.gender}
+                                        onChange={handleChange}
+                                        className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                                    >
+                                        <option value="">Select gender</option>
+                                        <option value="male">Male</option>
+                                        <option value="female">Female</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="grid md:grid-cols-2 gap-4">
+                                <div className="animate-slide-up" style={{ animationDelay: '400ms' }}>
+                                    <label className="block text-gray-700 font-medium mb-2">
+                                        <Ruler className="inline w-5 h-5 mr-2 animate-pop" />
+                                        Height (cm)
+                                    </label>
+                                    <input
+                                        type="number"
+                                        name="height"
+                                        value={formData.height}
+                                        onChange={handleChange}
+                                        className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                                        placeholder="Enter height in cm"
+                                        step="0.1"
+                                        min="1"
+                                    />
+                                </div>
+
+                                <div className="animate-slide-up" style={{ animationDelay: '450ms' }}>
+                                    <label className="block text-gray-700 font-medium mb-2">
+                                        <Scale className="inline w-5 h-5 mr-2 animate-pop" />
+                                        Weight (kg)
+                                    </label>
+                                    <input
+                                        type="number"
+                                        name="weight"
+                                        value={formData.weight}
+                                        onChange={handleChange}
+                                        className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                                        placeholder="Enter weight in kg"
+                                        step="0.1"
+                                        min="1"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="animate-slide-up" style={{ animationDelay: '500ms' }}>
+                                <label className="block text-gray-700 font-medium mb-2">
+                                    <Activity className="inline w-5 h-5 mr-2 animate-pop" />
+                                    Activity Level
+                                </label>
+                                <select
+                                    name="activity_level"
+                                    value={formData.activity_level}
+                                    onChange={handleChange}
+                                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                                >
+                                    <option value="">Select activity level</option>
+                                    <option value="sedentary">Sedentary (little or no exercise)</option>
+                                    <option value="lightly_active">Lightly Active (1-3 days/week)</option>
+                                    <option value="moderately_active">Moderately Active (3-5 days/week)</option>
+                                    <option value="very_active">Very Active (6-7 days/week)</option>
+                                    <option value="extra_active">Extra Active (intense exercise daily)</option>
+                                </select>
+                            </div>
+
+                            <div className="animate-slide-up" style={{ animationDelay: '550ms' }}>
+                                <label className="block text-gray-700 font-medium mb-2">
+                                    <Target className="inline w-5 h-5 mr-2 animate-pop" />
+                                    Health Goals
+                                </label>
+                                <textarea
+                                    name="health_goals"
+                                    value={formData.health_goals}
+                                    onChange={handleChange}
+                                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                                    placeholder="e.g., Lose weight, Build muscle, Maintain health"
+                                    rows="3"
+                                />
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                className="w-full py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition disabled:bg-gray-400 flex items-center justify-center shadow-lg animate-pop"
+                                style={{ animationDelay: '600ms' }}
+                            >
+                                {loading ? 'Saving...' : 'Save Profile'}
+                                <ArrowRight className="ml-2 w-5 h-5" />
+                            </button>
+                        </form>
+                    </div>
+
+                    {/* BMI Display */}
+                    <div className="space-y-6">
+                        {bmi && (
+                            <div className="bg-white rounded-lg shadow-md p-6 animate-pop" style={{ animationDelay: '200ms' }}>
+                                <h3 className="text-xl font-bold text-gray-800 mb-4">Your BMI</h3>
+                                <div className="text-center">
+                                    <div className="text-5xl font-bold text-blue-600 mb-2">
+                                        {bmi.bmi}
+                                    </div>
+                                    <div className={`text-lg font-semibold mb-4 ${bmi.category === 'Normal weight' ? 'text-green-600' :
+                                        bmi.category === 'Underweight' ? 'text-yellow-600' :
+                                            bmi.category === 'Overweight' ? 'text-orange-600' :
+                                                'text-red-600'
+                                        }`}>
+                                        {bmi.category}
+                                    </div>
+                                    <div className="text-sm text-gray-600 space-y-1">
+                                        <p>Height: {bmi.height} cm</p>
+                                        <p>Weight: {bmi.weight} kg</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg shadow-md p-6 text-white animate-slide-up" style={{ animationDelay: '300ms' }}>
+                            <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+                                <LayoutDashboard className="w-5 h-5 text-blue-200" />
+                                Next Steps
+                            </h3>
+                            <div className="space-y-3">
+                                <button
+                                    onClick={() => navigate('/recommendations')}
+                                    className="w-full text-left p-3 rounded-xl bg-white/10 hover:bg-white/20 transition group flex items-center justify-between border border-white/10"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <Utensils className="w-5 h-5 text-blue-200" />
+                                        <span className="font-semibold">View Diet Plans</span>
+                                    </div>
+                                    <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition" />
+                                </button>
+
+                                <button
+                                    onClick={() => navigate('/ai')}
+                                    className="w-full text-left p-3 rounded-xl bg-white/10 hover:bg-white/20 transition group flex items-center justify-between border border-white/10"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <Brain className="w-5 h-5 text-blue-200" />
+                                        <span className="font-semibold">AI Calorie Scan</span>
+                                    </div>
+                                    <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition" />
+                                </button>
+
+                                <button
+                                    onClick={() => navigate('/chat')}
+                                    className="w-full text-left p-3 rounded-xl bg-white/10 hover:bg-white/20 transition group flex items-center justify-between border border-white/10"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <MessageSquare className="w-5 h-5 text-blue-200" />
+                                        <span className="font-semibold">Chat with AI</span>
+                                    </div>
+                                    <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition" />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}

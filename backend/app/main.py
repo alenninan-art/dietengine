@@ -1,0 +1,58 @@
+import os
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
+from .database import engine, Base
+from . import models, models_recommendations
+from .routers import auth, profile, recommendations, ai, chat
+
+# Load environment variables for production
+load_dotenv()
+
+# Create tables if they don't exist
+Base.metadata.create_all(bind=engine)
+
+app = FastAPI(
+    title="Diet Engine API",
+    description="Production-ready API for the Diet Engine Platform"
+)
+
+# CORS Configuration
+# In production, set FRONTEND_URL environment variable (e.g., https://your-diet-engine.vercel.app)
+origins = [
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "http://127.0.0.1:5173",
+]
+frontend_url = os.getenv("FRONTEND_URL")
+if frontend_url:
+    origins.append(frontend_url)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Include Routers
+app.include_router(auth.router)
+app.include_router(profile.router)
+app.include_router(recommendations.router)
+app.include_router(ai.router)
+app.include_router(chat.router)
+
+@app.get("/")
+def read_root():
+    return {
+        "status": "healthy",
+        "service": "Diet Engine Backend",
+        "version": "1.0.0",
+        "environment": os.getenv("ENV", "development")
+    }
+
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run("backend.app.main:app", host="0.0.0.0", port=port, reload=False)
