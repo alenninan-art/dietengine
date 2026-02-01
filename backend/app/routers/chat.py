@@ -146,43 +146,63 @@ async def chat_with_ai(
 
     # Fallback/Rule-based logic (if OpenAI fails or key is missing)
     response = ""
-    if any(word in user_msg for word in ["hello", "hi", "hey", "greetings"]):
-        response = f"Hello {nickname}! I'm your Diet Engine Assistant. How can I help you today with your journey to {goal}?"
     
-    elif any(word in user_msg for word in ["diet recommendation", "what should i eat", "my diet", "suggest a meal", "recommed a diet"]):
+    # Common greetings and social talk
+    if any(word in user_msg for word in ["hello", "hi", "hey", "greetings", "how are you"]):
+        response = f"Hello {nickname}! I'm your Diet Engine Assistant, feeling great! How can I help you today with your journey to {goal}?"
+    
+    # Specific diet plan advice
+    elif any(word in user_msg for word in ["diet recommendation", "what should i eat", "my diet", "suggest a meal", "recommend a diet", "food suggestions"]):
         if bmi_cat:
             plan = db.query(models_recommendations.DietPlan).filter(
                 models_recommendations.DietPlan.bmi_category == bmi_cat
             ).first()
             if plan:
-                meals_summary = ", ".join([f"{m.meal_type.capitalize()}: {m.name}" for m in plan.meals[:3]])
-                response = f"Based on your {bmi_cat} BMI category, I recommend the '{plan.name}'. Some meals include: {meals_summary}."
+                meals_summary = ", ".join([f"{m.meal_type.capitalize()}: {m.name} ({m.quantity})" for m in plan.meals[:3]])
+                response = f"For your {bmi_cat} BMI category, I recommend the '{plan.name}'. Based on our system, your best meals are— {meals_summary}."
             else:
-                response = f"I'm sorry {nickname}, I couldn't find a specific diet plan for you right now, but focusing on whole foods is a great start!"
+                response = f"I'm sorry {nickname}, I couldn't find a specific diet plan for you right now, but focusing on protein-rich Kerala staples like Puttu or Kadala is highly recommended!"
         else:
-            response = f"I'd love to give you a diet recommendation, {nickname}! Please complete your height and weight in your profile first."
+            response = f"I'd love to give you a diet recommendation, {nickname}! Please complete your Profile Setup (Height, Weight, Age) first so I can calculate your requirements."
 
-    elif "bmi" in user_msg or "category" in user_msg:
+    # Exercises
+    elif any(word in user_msg for word in ["exercise", "workout", "training", "gym", "activity"]):
+        if exercise_context:
+            response = f"Based on your profile, {nickname}, I recommend these: {exercise_context} Consistency is key!"
+        else:
+            response = "For general fitness, I recommend 30 minutes of brisk walking or light jogging daily. Please finish your profile for a customized plan!"
+
+    # BMI information
+    elif any(word in user_msg for word in ["bmi", "category", "body mass index", "weight"]):
         if user_bmi:
-            response = f"Your current BMI is {user_bmi:.1f}, {nickname}. This places you in the {bmi_cat} category."
+            response = f"Your current BMI is {user_bmi:.1f}, {nickname}. This places you in the '{bmi_cat.capitalize()}' category. We are targeting your goal: {goal}."
         else:
-            response = f"I'd love to help with your BMI, {nickname}! Please enter your height and weight in your profile first."
+            response = f"I'd love to help with your BMI, {nickname}! Please enter your height and weight in your profile page first."
 
-    elif any(word in user_msg for word in ["kerala", "culture", "traditional"]):
-        response = f"Traditional Kerala food like Red Rice and Avial are high in nutrients! I've updated your recommendations to include these local favorites."
+    # Cultural & Kerala Specifics
+    elif any(word in user_msg for word in ["kerala", "culture", "traditional", "indian", "local"]):
+        response = f"Traditional Kerala food like Red Rice, Avial, and Appam are incredible for your health, {nickname}! They are budget-friendly and nutrient-dense. I've integrated these into your recommendations."
 
+    # Budget & Cost
     elif any(word in user_msg for word in ["budget", "cheap", "cost", "price", "expensive"]):
-        response = f"Health doesn't have to be expensive! Simple Kerala home-style foods are very budget-friendly."
+        response = f"Don't worry about the cost, {nickname}! Most of my recommendations focus on home-cooked staples like lentils, eggs, and local vegetables which are very affordable (often under ₹30 per meal)."
 
-    elif any(word in user_msg for word in ["water", "hydrate", "drink", "sambharam"]):
-        response = "Hydration is essential! Try Sambharam (spiced buttermilk) for a healthy, low-calorie drink."
+    # Hydration
+    elif any(word in user_msg for word in ["water", "hydrate", "drink", "sambharam", "buttermilk"]):
+        response = "Hydration is essential for metabolism! Try Sambharam (spiced buttermilk) with ginger and green chilies for a healthy, low-calorie Kerala-style drink."
 
-    elif "thank" in user_msg:
-        response = f"You're very welcome, {nickname}! I'm always here if you have more questions."
+    # Appreciation
+    elif any(word in user_msg for word in ["thank", "thanks", "great", "awesome", "good"]):
+        response = f"You're very welcome, {nickname}! I'm happy to help you reach your goals. Is there anything else you want to know?"
 
+    # AI identity
+    elif any(word in user_msg for word in ["who are you", "what are you", "your name"]):
+        response = "I am the Diet Engine Expert AI, your personal health and nutrition consultant. I'm here to guide you with diet plans, exercises, and AI analysis!"
+
+    # Generic catch-all
     else:
         tip = random.choice(CHAT_RESPONSES)
-        response = f"That's an interesting question! Here's a tip: {tip}"
+        response = f"That's an interesting question! While I'm still learning, here's a professional tip: {tip}"
     
     return {
         "reply": response,

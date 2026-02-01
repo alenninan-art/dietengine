@@ -34,6 +34,7 @@ origins = [
     "http://localhost:5173",
     "http://localhost:5174",
     "http://127.0.0.1:5173",
+    "http://192.168.1.40:5173",
 ]
 frontend_url = os.getenv("FRONTEND_URL")
 if frontend_url:

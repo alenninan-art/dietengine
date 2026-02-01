@@ -1,20 +1,9 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api';
 
 const AuthContext = createContext();
 
-const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000',
-});
-
-// Add token to requests
-api.interceptors.request.use((config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-});
+// Token logic moved to api.js
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
