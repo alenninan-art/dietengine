@@ -1,7 +1,15 @@
 import os
+import sys
+import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+print("--- DIET ENGINE STARTUP ---", flush=True)
 from .database import engine, Base
 from . import models, models_recommendations
 from .routers import auth, profile, recommendations, ai, chat
@@ -39,9 +47,11 @@ origins = [
 frontend_url = os.getenv("FRONTEND_URL")
 if frontend_url:
     origins.append(frontend_url)
-    print(f"CORS: Added production origin: {frontend_url}")
+    logger.info(f"CORS: Added production origin: {frontend_url}")
+    print(f"DIAGNOSTIC: FRONTEND_URL found: {frontend_url}", flush=True)
 else:
-    print("CORS: No FRONTEND_URL found in environment variables.")
+    logger.warning("CORS: No FRONTEND_URL found in environment variables.")
+    print("DIAGNOSTIC: No FRONTEND_URL found.", flush=True)
 
 app.add_middleware(
     CORSMiddleware,
