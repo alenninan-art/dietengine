@@ -17,6 +17,17 @@ app = FastAPI(
     description="Production-ready API for the Diet Engine Platform"
 )
 
+from .seeder import seed_database
+from .database import SessionLocal
+
+@app.on_event("startup")
+async def startup_event():
+    db = SessionLocal()
+    try:
+        seed_database(db)
+    finally:
+        db.close()
+
 # CORS Configuration
 # In production, set FRONTEND_URL environment variable (e.g., https://your-diet-engine.vercel.app)
 origins = [
