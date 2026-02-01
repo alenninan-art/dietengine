@@ -39,6 +39,9 @@ origins = [
 frontend_url = os.getenv("FRONTEND_URL")
 if frontend_url:
     origins.append(frontend_url)
+    print(f"CORS: Added production origin: {frontend_url}")
+else:
+    print("CORS: No FRONTEND_URL found in environment variables.")
 
 app.add_middleware(
     CORSMiddleware,
