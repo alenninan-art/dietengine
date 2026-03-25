@@ -22,10 +22,17 @@ function Dashboard() {
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
+  console.log("PrivateRoute check:", { user: !!user, loading });
 
-  if (loading) return <div className="flex justify-center items-center h-screen">Loading...</div>;
+  if (loading) return <div style={{ padding: '50px', background: 'yellow' }}>Loading Auth...</div>;
 
-  return user ? children : <Navigate to="/login" />;
+  if (!user) {
+    console.log("PrivateRoute: No user, redirecting to login");
+    return <Navigate to="/login" />;
+  }
+
+  console.log("PrivateRoute: Auth success, rendering children");
+  return children;
 }
 
 function App() {
@@ -55,6 +62,8 @@ function App() {
               <Chatbot />
             </PrivateRoute>
           } />
+          <Route path="/chat-test" element={<Chatbot />} />
+          <Route path="/chatbot" element={<Navigate to="/chat" />} />
           <Route path="/dashboard" element={
             <PrivateRoute>
               <Dashboard />

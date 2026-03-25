@@ -30,3 +30,9 @@ class User(Base):
     activity_level = Column(Enum(ActivityLevel), nullable=True)
     health_goals = Column(String, nullable=True) # e.g. "lose weight", "gain muscle"
 
+    # Fitness Coach Specific Data
+    workout_location = Column(String, nullable=True) # e.g. "Gym", "Home"
+    equipment_available = Column(String, nullable=True) # e.g. "Dumbbells", "None"
+    injuries_limitations = Column(String, nullable=True) # e.g. "Knee pain"
+    workout_days_per_week = Column(Integer, nullable=True, default=3)
+

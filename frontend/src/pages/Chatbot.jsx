@@ -1,15 +1,17 @@
 import { useState, useRef, useEffect } from 'react';
 import { Send, User, Bot, ArrowLeft, Loader2, MessageSquare, Sparkles, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import api from '../api';
+import api, { checkBackendHealth } from '../api';
 
 export default function Chatbot() {
+    console.log("Chatbot: Rendering started");
     const navigate = useNavigate();
     const [messages, setMessages] = useState([
         { role: 'bot', text: 'Hello! I am your AI Health Assistant. Ask me anything about your diet or exercise plans!' }
     ]);
     const [inputValue, setInputValue] = useState('');
     const [loading, setLoading] = useState(false);
+    const [isBackendOnline, setIsBackendOnline] = useState(true);
     const messagesEndRef = useRef(null);
 
     const scrollToBottom = () => {
@@ -17,7 +19,19 @@ export default function Chatbot() {
     };
 
     useEffect(() => {
+        console.log("Chatbot: Mounted");
         scrollToBottom();
+        
+        // Initial health check
+        const checkStatus = async () => {
+            const online = await checkBackendHealth();
+            setIsBackendOnline(online);
+        };
+        checkStatus();
+        
+        // Periodic check every 30 seconds
+        const interval = setInterval(checkStatus, 30000);
+        return () => clearInterval(interval);
     }, [messages]);
 
     const handleSend = async (e) => {
@@ -30,11 +44,21 @@ export default function Chatbot() {
         setLoading(true);
 
         try {
-            const response = await api.post('/chat/', { message: userMsg });
+            const response = await api.post('/chat', { message: userMsg });
             setMessages(prev => [...prev, { role: 'bot', text: response.data.reply }]);
         } catch (error) {
             console.error('Chat failed:', error);
-            setMessages(prev => [...prev, { role: 'bot', text: 'I encountered a small hiccup. Could you please try again?' }]);
+            let errorMessage = 'I encountered a small hiccup. Please try again.';
+            
+            if (error.message === 'Network Error') {
+                errorMessage = 'I cannot reach the health assistant server. Please ensure the backend (FastAPI) is running on port 8000.';
+            } else if (error.response?.data?.detail) {
+                errorMessage = `I encountered a small hiccup: ${error.response.data.detail}. Please try again.`;
+            } else if (error.message) {
+                errorMessage = `I encountered a small hiccup: ${error.message}. Please try again.`;
+            }
+            
+            setMessages(prev => [...prev, { role: 'bot', text: errorMessage }]);
         } finally {
             setLoading(false);
         }
@@ -43,6 +67,12 @@ export default function Chatbot() {
     const clearChat = () => {
         setMessages([{ role: 'bot', text: 'Chat cleared. How else can I help you?' }]);
     };
+
+    // Safety fallback
+    if (!messages) {
+        console.error("Chatbot: State failure, messages is null");
+        return <div style={{ color: 'red', padding: '20px' }}>Fatal Error: Component State Corrupted</div>;
+    }
 
     return (
         <div className="relative flex flex-col h-screen bg-slate-50 overflow-hidden font-sans">
@@ -66,8 +96,10 @@ export default function Chatbot() {
                         <div>
                             <h1 className="text-lg font-extrabold text-gray-900 leading-none">Health Assistant</h1>
                             <div className="flex items-center gap-1.5 mt-1">
-                                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">AI Powered</span>
+                                <div className={`w-2 h-2 rounded-full ${isBackendOnline ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
+                                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                    {isBackendOnline ? 'AI Powered' : 'Server Offline'}
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -91,14 +123,14 @@ export default function Chatbot() {
                                     {msg.role === 'user' ? <User className="w-5 h-5" /> : <Bot className="w-5 h-5 text-blue-600" />}
                                 </div>
                                 <div className={`relative px-5 py-4 rounded-2xl shadow-sm ${msg.role === 'user'
-                                        ? 'bg-gradient-to-br from-indigo-600 to-blue-700 text-white rounded-tr-none'
-                                        : 'bg-white text-gray-800 rounded-tl-none border border-gray-100'
+                                    ? 'bg-gradient-to-br from-indigo-600 to-blue-700 text-white rounded-tr-none'
+                                    : 'bg-white text-gray-800 rounded-tl-none border border-gray-100'
                                     }`}>
                                     <p className="text-sm md:text-base leading-relaxed font-medium">
                                         {msg.text}
                                     </p>
                                     <span className={`text-[10px] mt-2 block opacity-50 font-bold uppercase tracking-tighter ${msg.role === 'user' ? 'text-right' : 'text-left'}`}>
-                                        {new Date().toLocaleTimeString([], { hour: '2-numeric', minute: '2-numeric' })}
+                                        {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                     </span>
                                 </div>
                             </div>

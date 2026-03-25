@@ -4,8 +4,15 @@ sys.path.append('.')
 from app.database import SessionLocal, engine, Base
 from app import models_recommendations
 
-# Create tables (drop first to update schema)
-Base.metadata.drop_all(bind=engine)
+# Selective table update
+from app.models_recommendations import DietPlan, Meal, Exercise
+from app.models import User
+
+# Only drop and recreate specific tables to preserve User accounts
+Meal.__table__.drop(bind=engine, checkfirst=True)
+DietPlan.__table__.drop(bind=engine, checkfirst=True)
+Exercise.__table__.drop(bind=engine, checkfirst=True)
+
 Base.metadata.create_all(bind=engine)
 
 def seed_diet_plans():
@@ -38,9 +45,9 @@ def seed_diet_plans():
             "carbs_g": 275,
             "fats_g": 73,
             "meals": [
-                {"meal_type": "breakfast", "name": "Masala Dosa & Sambar", "description": "Fermented rice pancake with potato filling", "calories": 450, "protein_g": 10, "carbs_g": 70, "fats_g": 15, "price_estimate": 40.0, "quantity": "1 large dosa (150g) + 1 cup (240ml) sambar"},
-                {"meal_type": "snack", "name": "Boiled Eggs", "description": "High-quality affordable protein", "calories": 155, "protein_g": 13, "carbs_g": 1, "fats_g": 11, "price_estimate": 12.0, "quantity": "2 large eggs (100g)"},
-                {"meal_type": "lunch", "name": "Red Rice & Avial", "description": "Kerala red rice with mixed vegetable coconut stew", "calories": 650, "protein_g": 20, "carbs_g": 85, "fats_g": 25, "price_estimate": 60.0, "quantity": "1.5 cups (300g) rice + 1 cup (200g) avial"},
+                {"meal_type": "breakfast", "name": "Masala Dosa", "description": "Rice pancake with potato filling, sambar and chutnee", "calories": 420, "protein_g": 9, "carbs_g": 68, "fats_g": 12, "price_estimate": 45.0, "quantity": "1 large dosa (150g) + Sambar + Chutnee"},
+                {"meal_type": "snack", "name": "Boiled Eggs", "description": "High-quality affordable protein", "calories": 155, "protein_g": 13, "carbs_g": 1, "fats_g": 11, "price_estimate": 15.0, "quantity": "2 large eggs (100g)"},
+                {"meal_type": "lunch", "name": "Chicken Masala Biriyani", "description": "Traditional spiced rice with marinated chicken", "calories": 650, "protein_g": 28, "carbs_g": 80, "fats_g": 22, "price_estimate": 130.0, "quantity": "1 standard bowl (350g-400g)"},
                 {"meal_type": "snack", "name": "Roasted Peanuts", "description": "Budget-friendly healthy fats", "calories": 200, "protein_g": 8, "carbs_g": 6, "fats_g": 16, "price_estimate": 10.0, "quantity": "1/4 cup (30g)"},
                 {"meal_type": "dinner", "name": "Chappathi & Dal Tadka", "description": "Whole wheat rotis with high-fiber yellow lentils", "calories": 745, "protein_g": 30, "carbs_g": 100, "fats_g": 20, "price_estimate": 45.0, "quantity": "3 pieces (150g) + 1 cup (200g) dal"},
             ]
@@ -55,24 +62,25 @@ def seed_diet_plans():
             "meals": [
                 {"meal_type": "breakfast", "name": "Oats Upma", "description": "Savory oats with carrots and beans", "calories": 350, "protein_g": 12, "carbs_g": 50, "fats_g": 10, "price_estimate": 30.0, "quantity": "1.5 cups (250g)"},
                 {"meal_type": "snack", "name": "Green Gram Salad", "description": "Steamed and seasoned sprouted mung beans", "calories": 200, "protein_g": 14, "carbs_g": 30, "fats_g": 2, "price_estimate": 15.0, "quantity": "1 cup (150g)"},
-                {"meal_type": "lunch", "name": "Idiyappam & Veg Curry", "description": "Steamed rice noodles with coconut-free vegetable curry", "calories": 450, "protein_g": 15, "carbs_g": 75, "fats_g": 10, "price_estimate": 45.0, "quantity": "3 small pieces (120g) + 1 cup (200ml) curry"},
-                {"meal_type": "snack", "name": "Sambharam", "description": "Traditional spiced buttermilk", "calories": 80, "protein_g": 3, "carbs_g": 6, "fats_g": 3, "price_estimate": 8.0, "quantity": "1 big glass (300ml)"},
-                {"meal_type": "dinner", "name": "Grilled Fish & Cabbage Thoran", "description": "Spicy grilled lean fish with stir-fried cabbage", "calories": 720, "protein_g": 50, "carbs_g": 25, "fats_g": 20, "price_estimate": 100.0, "quantity": "150g fish + 1.5 cups (200g) thoran"},
+                {"meal_type": "lunch", "name": "Alfham Grilled Chicken", "description": "Spiced grilled chicken, high protein, low calorie", "calories": 480, "protein_g": 45, "carbs_g": 5, "fats_g": 32, "price_estimate": 140.0, "quantity": "Quarter Chicken piece (Approx 200g)"},
+                {"meal_type": "snack", "name": "Sambharam", "description": "Traditional spiced buttermilk", "calories": 80, "protein_g": 3, "carbs_g": 6, "fats_g": 3, "price_estimate": 10.0, "quantity": "1 big glass (300ml)"},
+                {"meal_type": "dinner", "name": "Grilled Fish & Cabbage Thoran", "description": "Spicy grilled lean fish with stir-fried cabbage", "calories": 720, "protein_g": 50, "carbs_g": 25, "fats_g": 20, "price_estimate": 120.0, "quantity": "150g fish + 1.5 cups (200g) thoran"},
             ]
         },
         {
             "name": "Indian Heritage - Intensive",
-            "description": "Very low-calorie, high-protein Indian management diet.",
+            "description": "Very low-calorie, high-protein Kerala-style diet for intensive management.",
             "bmi_category": "obese",
             "calories_per_day": 1600,
             "protein_g": 130,
-            "carbs_g": 150, "fats_g": 53,
+            "carbs_g": 150,
+            "fats_g": 53,
             "meals": [
-                {"meal_type": "breakfast", "name": "Besan Chilla", "description": "Gram flour pancakes with lots of spinach", "calories": 300, "protein_g": 15, "carbs_g": 35, "fats_g": 10, "price_estimate": 25.0, "quantity": "2 medium pieces (140g)"},
-                {"meal_type": "snack", "name": "Roasted Chana", "description": "Fiber-rich roasted chickpeas", "calories": 150, "protein_g": 8, "carbs_g": 20, "fats_g": 4, "price_estimate": 8.0, "quantity": "1/2 cup (50g)"},
-                {"meal_type": "lunch", "name": "Kanji & Whole Payar", "description": "Minimal rice gruel with protein-rich green gram", "calories": 450, "protein_g": 22, "carbs_g": 65, "fats_g": 10, "price_estimate": 25.0, "quantity": "1 bowl (300ml) kanji + 1/2 cup (100g) payar"},
-                {"meal_type": "snack", "name": "Cucumber Salad", "description": "Sliced cucumbers with black salt", "calories": 50, "protein_g": 1, "carbs_g": 8, "fats_g": 0, "price_estimate": 10.0, "quantity": "200g slices"},
-                {"meal_type": "dinner", "name": "Soya Chunk Curry & Roti", "description": "High-protein meat substitute with single whole wheat roti", "calories": 650, "protein_g": 45, "carbs_g": 70, "fats_g": 15, "price_estimate": 35.0, "quantity": "1.5 cups (300g) curry + 1 roti (50g)"},
+                {"meal_type": "breakfast", "name": "Idiyappam & Egg Roast", "description": "Steamed rice noodles with 2-egg spicy roast", "calories": 400, "protein_g": 18, "carbs_g": 45, "fats_g": 15, "price_estimate": 40.0, "quantity": "2 pieces (100g) + 2 Eggs (100g)"},
+                {"meal_type": "snack", "name": "Nadan Chicken Fry (Leand)", "description": "Spicy roasted lean chicken breast", "calories": 300, "protein_g": 35, "carbs_g": 5, "fats_g": 15, "price_estimate": 60.0, "quantity": "150g serving"},
+                {"meal_type": "lunch", "name": "Matta Rice Kanji & Whole Payar", "description": "Red rice gruel with spicy green gram and soya stir-fry", "calories": 450, "protein_g": 35, "carbs_g": 60, "fats_g": 10, "price_estimate": 35.0, "quantity": "1 bowl (300ml) kanji + 1 cup payar-soya mix"},
+                {"meal_type": "snack", "name": "Sambharam", "description": "Traditional Kerala spiced buttermilk", "calories": 50, "protein_g": 3, "carbs_g": 5, "fats_g": 2, "price_estimate": 10.0, "quantity": "1 large glass (300ml)"},
+                {"meal_type": "dinner", "name": "Chappathi & Fish Mulakittathu", "description": "Whole wheat roti with spicy Kerala red fish curry", "calories": 400, "protein_g": 39, "carbs_g": 35, "fats_g": 11, "price_estimate": 110.0, "quantity": "1 piece (50g) + 200g Fish gravy"},
             ]
         }
     ]

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Camera, Upload, Send, Brain, Flame, Info, ArrowLeft, RefreshCw, X } from 'lucide-react';
+import { Camera, Upload, Send, Brain, Flame, Info, ArrowLeft, RefreshCw, X, MessageSquare, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 
@@ -73,13 +73,22 @@ export default function AIAnalysis() {
                                 <p className="text-gray-600">Snap a photo of your meal for instant calorie estimation</p>
                             </div>
                         </div>
-                        <button
-                            onClick={() => navigate('/dashboard')}
-                            className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition flex items-center gap-2"
-                        >
-                            <ArrowLeft className="w-4 h-4" />
-                            To Dashboard
-                        </button>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => navigate('/chat')}
+                                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition flex items-center gap-2"
+                            >
+                                <MessageSquare className="w-4 h-4" />
+                                AI Chat
+                            </button>
+                            <button
+                                onClick={() => navigate('/dashboard')}
+                                className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition flex items-center gap-2"
+                            >
+                                <ArrowLeft className="w-4 h-4" />
+                                To Dashboard
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -168,6 +177,17 @@ export default function AIAnalysis() {
                             </div>
                         ) : (
                             <div className="space-y-6 animate-fade-in">
+                                {result?.analysis?.is_fallback && (
+                                    <div className="bg-amber-50 border-l-4 border-amber-400 p-4 animate-pop">
+                                        <div className="flex gap-3">
+                                            <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0" />
+                                            <div>
+                                                <h4 className="text-sm font-bold text-amber-800 uppercase tracking-tight">System Notice</h4>
+                                                <p className="text-xs text-amber-700 font-medium">Full AI scans are currently busy. We've used an estimated match based on your file name.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                                 <div className="bg-indigo-50 p-4 rounded-xl space-y-3 animate-slide-up" style={{ animationDelay: '300ms' }}>
                                     <div className="flex justify-between items-center">
                                         <div>

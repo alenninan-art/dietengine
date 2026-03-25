@@ -60,9 +60,18 @@ def get_exercise_recommendations(
     bmi_category = get_bmi_category(bmi)
     
     # Get exercises for this BMI category
-    exercises = db.query(models_recommendations.Exercise).filter(
+    query = db.query(models_recommendations.Exercise).filter(
         models_recommendations.Exercise.bmi_category == bmi_category
-    ).all()
+    )
+    
+    # Filter by location if set
+    if current_user.workout_location:
+        query = query.filter(
+            (models_recommendations.Exercise.location_type == current_user.workout_location) | 
+            (models_recommendations.Exercise.location_type == "Any")
+        )
+    
+    exercises = query.all()
     
     if not exercises:
         # Return exercises for all categories if specific not found

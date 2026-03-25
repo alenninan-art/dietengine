@@ -25,5 +25,14 @@ api.interceptors.request.use((config) => {
     return config;
 });
 
-export { API_BASE };
+const checkBackendHealth = async () => {
+    try {
+        await api.get('/');
+        return true;
+    } catch (error) {
+        return false;
+    }
+};
+
+export { API_BASE, checkBackendHealth };
 export default api;

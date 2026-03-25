@@ -3,74 +3,73 @@ from .database import SessionLocal
 from . import models_recommendations
 
 def seed_database(db: Session):
-    # Check if already seeded
-    if db.query(models_recommendations.DietPlan).first():
-        return
-
     print("Auto-seeding database with Indian & Kerala culture diet plans...")
+    
+    # Remove existing diet plans and meals to avoid duplicates
+    db.query(models_recommendations.Meal).delete()
+    db.query(models_recommendations.DietPlan).delete()
+    db.flush()
     
     # Diet Plans Data
     diet_plans_data = [
         {
             "name": "Indian Heritage - Weight Gain",
-            "description": "High-calorie, budget-friendly Indian nutrition for healthy weight gain.",
+            "description": "High-calorie Kerala nutrition featuring rich, traditional delicacies for weight gain.",
             "bmi_category": "underweight",
             "calories_per_day": 2800,
             "protein_g": 140,
             "carbs_g": 350,
             "fats_g": 93,
             "meals": [
-                {"meal_type": "breakfast", "name": "Puttu & Kadala Curry", "description": "Steamed rice cake with spicy black chickpeas", "calories": 650, "protein_g": 18, "carbs_g": 95, "fats_g": 22, "price_estimate": 35.0, "quantity": "2 pieces (150g) + 1 cup (200g) curry"},
-                {"meal_type": "snack", "name": "Banana Fritters & Milk", "description": "Kerala Ethakka Appam with whole milk", "calories": 350, "protein_g": 8, "carbs_g": 50, "fats_g": 12, "price_estimate": 25.0, "quantity": "2 pieces (120g) + 1 glass (250ml) milk"},
-                {"meal_type": "lunch", "name": "Neychoru & Chicken Curry", "description": "Budget ghee rice with Kerala chicken masala", "calories": 950, "protein_g": 42, "carbs_g": 110, "fats_g": 37, "price_estimate": 130.0, "quantity": "2.5 cups (500g) rice + 200g chicken"},
-                {"meal_type": "snack", "name": "Soya Chunks Stir Fry", "description": "Economic high-protein snack", "calories": 300, "protein_g": 25, "carbs_g": 10, "fats_g": 15, "price_estimate": 20.0, "quantity": "1 cup (150g)"},
-                {"meal_type": "dinner", "name": "Aloo Paratha & Curd", "description": "Wholesome stuffed parathas with homemade yogurt", "calories": 650, "protein_g": 15, "carbs_g": 85, "fats_g": 25, "price_estimate": 50.0, "quantity": "2 pieces (200g) + 1 cup (200g) curd"},
+                {"meal_type": "breakfast", "name": "Appam & Kerala Chicken Stew", "description": "Laced rice pancakes with rich coconut milk chicken stew", "calories": 650, "protein_g": 30, "carbs_g": 75, "fats_g": 25, "price_estimate": 100.0, "quantity": "3 Appams + 1.5 cups Stew"},
+                {"meal_type": "lunch", "name": "Malabar Chicken Biriyani", "description": "Authentic fragrant kaima rice biriyani with chicken masala", "calories": 950, "protein_g": 45, "carbs_g": 110, "fats_g": 40, "price_estimate": 160.0, "quantity": "1 Full Portion (500g)"},
+                {"meal_type": "snack", "name": "Pazham Pori & Chaya", "description": "Classic Kerala sweet banana fritters with tea", "calories": 400, "protein_g": 5, "carbs_g": 75, "fats_g": 12, "price_estimate": 40.0, "quantity": "2 Fritters + 1 Cup Tea"},
+                {"meal_type": "dinner", "name": "Kerala Porotta & Beef Ularthiyathu", "description": "Flaky layered flatbread with spicy slow-roasted beef", "calories": 800, "protein_g": 45, "carbs_g": 80, "fats_g": 35, "price_estimate": 150.0, "quantity": "2 Porottas + 200g Beef Roast"},
             ]
         },
         {
             "name": "Indian Heritage - Balanced",
-            "description": "Economical balanced Indian nutrition with cultural staples.",
+            "description": "Balanced, wholesome traditional Kerala meals.",
             "bmi_category": "normal",
             "calories_per_day": 2200,
             "protein_g": 110,
             "carbs_g": 275,
             "fats_g": 73,
             "meals": [
-                {"meal_type": "breakfast", "name": "Masala Dosa & Sambar", "description": "Fermented rice pancake with potato filling", "calories": 450, "protein_g": 10, "carbs_g": 70, "fats_g": 15, "price_estimate": 40.0, "quantity": "1 large dosa (150g) + 1 cup (240ml) sambar"},
-                {"meal_type": "snack", "name": "Boiled Eggs", "description": "High-quality affordable protein", "calories": 155, "protein_g": 13, "carbs_g": 1, "fats_g": 11, "price_estimate": 12.0, "quantity": "2 large eggs (100g)"},
-                {"meal_type": "lunch", "name": "Red Rice & Avial", "description": "Kerala red rice with mixed vegetable coconut stew", "calories": 720, "protein_g": 22, "carbs_g": 100, "fats_g": 26, "price_estimate": 65.0, "quantity": "2 cups (400g) rice + 1 cup (200g) avial"},
-                {"meal_type": "snack", "name": "Roasted Peanuts", "description": "Budget-friendly healthy fats", "calories": 200, "protein_g": 8, "carbs_g": 6, "fats_g": 16, "price_estimate": 10.0, "quantity": "1/4 cup (30g)"},
-                {"meal_type": "dinner", "name": "Chappathi & Dal Tadka", "description": "Whole wheat rotis with high-fiber yellow lentils", "calories": 745, "protein_g": 30, "carbs_g": 100, "fats_g": 20, "price_estimate": 45.0, "quantity": "3 pieces (150g) + 1 cup (200g) dal"},
+                {"meal_type": "breakfast", "name": "Puttu & Kadala Curry", "description": "Iconic steamed rice cake with rich black chickpea curry", "calories": 500, "protein_g": 18, "carbs_g": 85, "fats_g": 12, "price_estimate": 60.0, "quantity": "2 pieces Puttu + 1 cup Kadala Curry"},
+                {"meal_type": "lunch", "name": "Kerala Sadya (Mini)", "description": "Traditional feast with Matta rice, Sambar, Avial, and Thoran", "calories": 800, "protein_g": 20, "carbs_g": 120, "fats_g": 25, "price_estimate": 120.0, "quantity": "Standard Sadya Banana Leaf Meal"},
+                {"meal_type": "snack", "name": "Ela Ada", "description": "Steamed rice parcel with coconut and jaggery wrapped in banana leaf", "calories": 300, "protein_g": 4, "carbs_g": 60, "fats_g": 8, "price_estimate": 30.0, "quantity": "1 Large Ada"},
+                {"meal_type": "dinner", "name": "Pathiri & Kerala Meen Curry", "description": "Soft rice flatbreads with traditional spicy fish curry", "calories": 600, "protein_g": 35, "carbs_g": 70, "fats_g": 18, "price_estimate": 110.0, "quantity": "4 Pathiris + 150g Fish Curry"},
             ]
         },
         {
             "name": "Indian Heritage - Weight Loss",
-            "description": "Calorie-conscious Indian diet focusing on steamed preparations.",
+            "description": "Calorie-conscious traditional Kerala diet focusing on steamed preparations.",
             "bmi_category": "overweight",
             "calories_per_day": 1800,
             "protein_g": 120,
-            "carbs_g": 180, "fats_g": 60,
+            "carbs_g": 180,
+            "fats_g": 60,
             "meals": [
-                {"meal_type": "breakfast", "name": "Oats Upma", "description": "Savory oats with carrots and beans", "calories": 350, "protein_g": 12, "carbs_g": 50, "fats_g": 10, "price_estimate": 30.0, "quantity": "1.5 cups (250g)"},
-                {"meal_type": "snack", "name": "Green Gram Salad", "description": "Steamed and seasoned sprouted mung beans", "calories": 200, "protein_g": 14, "carbs_g": 30, "fats_g": 2, "price_estimate": 15.0, "quantity": "1 cup (150g)"},
-                {"meal_type": "lunch", "name": "Idiyappam & Veg Curry", "description": "Steamed rice noodles with coconut-free vegetable curry", "calories": 450, "protein_g": 15, "carbs_g": 75, "fats_g": 10, "price_estimate": 45.0, "quantity": "3 small pieces (120g) + 1 cup (200ml) curry"},
-                {"meal_type": "snack", "name": "Sambharam", "description": "Traditional spiced buttermilk", "calories": 80, "protein_g": 3, "carbs_g": 6, "fats_g": 3, "price_estimate": 8.0, "quantity": "1 big glass (300ml)"},
-                {"meal_type": "dinner", "name": "Grilled Fish & Cabbage Thoran", "description": "Spicy grilled lean fish with stir-fried cabbage", "calories": 720, "protein_g": 50, "carbs_g": 25, "fats_g": 20, "price_estimate": 100.0, "quantity": "150g fish + 1.5 cups (200g) thoran"},
+                {"meal_type": "breakfast", "name": "Idiyappam & Vegetable Stew", "description": "String hoppers with light coconut milk vegetable stew", "calories": 350, "protein_g": 8, "carbs_g": 60, "fats_g": 10, "price_estimate": 50.0, "quantity": "3 Idiyappams + 1 cup Veg Stew"},
+                {"meal_type": "lunch", "name": "Matta Rice, Moru & Mathi Peera", "description": "High-fiber red rice, spiced buttermilk, and crumbled sardine with coconut", "calories": 550, "protein_g": 35, "carbs_g": 65, "fats_g": 15, "price_estimate": 80.0, "quantity": "1.5 cups Matta Rice + Moru + 1 cup Mathi Peera"},
+                {"meal_type": "snack", "name": "Cherupayar Sundal (Green Gram)", "description": "Boiled and tempered green gram with fresh coconut", "calories": 200, "protein_g": 12, "carbs_g": 35, "fats_g": 4, "price_estimate": 25.0, "quantity": "1 cup (150g)"},
+                {"meal_type": "dinner", "name": "Godhambu (Wheat) Dosa & Tomato Chutney", "description": "Instant whole wheat crepe with tangy local chutney", "calories": 400, "protein_g": 12, "carbs_g": 65, "fats_g": 8, "price_estimate": 40.0, "quantity": "3 Wheat Dosas + Chutney"},
             ]
         },
         {
             "name": "Indian Heritage - Intensive",
-            "description": "Very low-calorie, high-protein Indian management diet.",
+            "description": "Very low-calorie, high-protein Kerala-style diet prioritizing seafood and lean meats.",
             "bmi_category": "obese",
             "calories_per_day": 1600,
             "protein_g": 130,
-            "carbs_g": 150, "fats_g": 53,
+            "carbs_g": 150,
+            "fats_g": 53,
             "meals": [
-                {"meal_type": "breakfast", "name": "Besan Chilla", "description": "Gram flour pancakes with lots of spinach", "calories": 300, "protein_g": 15, "carbs_g": 35, "fats_g": 10, "price_estimate": 25.0, "quantity": "2 medium pieces (140g)"},
-                {"meal_type": "snack", "name": "Roasted Chana", "description": "Fiber-rich roasted chickpeas", "calories": 150, "protein_g": 8, "carbs_g": 20, "fats_g": 4, "price_estimate": 8.0, "quantity": "1/2 cup (50g)"},
-                {"meal_type": "lunch", "name": "Kanji & Whole Payar", "description": "Rice gruel with protein-rich green gram", "calories": 520, "protein_g": 24, "carbs_g": 80, "fats_g": 11, "price_estimate": 28.0, "quantity": "1.5 bowls (450ml) kanji + 1/2 cup (100g) payar"},
-                {"meal_type": "snack", "name": "Cucumber Salad", "description": "Sliced cucumbers with black salt", "calories": 50, "protein_g": 1, "carbs_g": 8, "fats_g": 0, "price_estimate": 10.0, "quantity": "200g slices"},
-                {"meal_type": "dinner", "name": "Soya Chunk Curry & Roti", "description": "High-protein meat substitute with single whole wheat roti", "calories": 650, "protein_g": 45, "carbs_g": 70, "fats_g": 15, "price_estimate": 35.0, "quantity": "1.5 cups (300g) curry + 1 roti (50g)"},
+                {"meal_type": "breakfast", "name": "Kerala Mutta Roast & 1 Appam", "description": "Spicy onion and tomato egg roast with a single rice pancake", "calories": 350, "protein_g": 18, "carbs_g": 35, "fats_g": 15, "price_estimate": 60.0, "quantity": "1 Appam + 2 Eggs in Roast"},
+                {"meal_type": "lunch", "name": "Karimeen Pollichathu", "description": "Premium pearl spot fish marinated and baked in banana leaf", "calories": 400, "protein_g": 45, "carbs_g": 15, "fats_g": 18, "price_estimate": 250.0, "quantity": "1 Large Karimeen with masala"},
+                {"meal_type": "snack", "name": "Sambharam (Spiced Buttermilk)", "description": "Refreshing probiotic drink with ginger, green chilli, and curry leaves", "calories": 50, "protein_g": 3, "carbs_g": 5, "fats_g": 2, "price_estimate": 15.0, "quantity": "1 Large Glass"},
+                {"meal_type": "dinner", "name": "Alfaham Chicken with Salad", "description": "Arabian-influenced Kerala-style spicy grilled chicken", "calories": 450, "protein_g": 50, "carbs_g": 15, "fats_g": 20, "price_estimate": 160.0, "quantity": "Half Chicken (dry) + Cucumber/Carrot Salad"},
             ]
         }
     ]
@@ -86,15 +85,43 @@ def seed_database(db: Session):
             
     # Exercises Data
     exercises_data = [
-        {"name": "Push-ups", "description": "Standard push-ups for upper body strength", "category": "strength", "intensity": "moderate", "duration_minutes": 15, "calories_burned": 80, "bmi_category": "underweight", "equipment_needed": "None"},
-        {"name": "Squats", "description": "Bodyweight squats for leg strength", "category": "strength", "intensity": "moderate", "duration_minutes": 15, "calories_burned": 85, "bmi_category": "underweight", "equipment_needed": "None"},
-        {"name": "Light Jogging", "description": "Gentle jogging for cardio", "category": "cardio", "intensity": "low", "duration_minutes": 20, "calories_burned": 120, "bmi_category": "underweight", "equipment_needed": "None"},
-        {"name": "Running", "description": "Moderate pace running", "category": "cardio", "intensity": "moderate", "duration_minutes": 30, "calories_burned": 300, "bmi_category": "normal", "equipment_needed": "Running shoes"},
-        {"name": "Yoga", "description": "Vinyasa or power yoga", "category": "flexibility", "intensity": "moderate", "duration_minutes": 45, "calories_burned": 200, "bmi_category": "normal", "equipment_needed": "Yoga mat"},
-        {"name": "Brisk Walking", "description": "Fast-paced walking", "category": "cardio", "intensity": "moderate", "duration_minutes": 45, "calories_burned": 250, "bmi_category": "overweight", "equipment_needed": "Walking shoes"},
-        {"name": "Water Walking", "description": "Walking in shallow pool water", "category": "cardio", "intensity": "low", "duration_minutes": 30, "calories_burned": 180, "bmi_category": "obese", "equipment_needed": "Swimming pool"},
+        # Underweight (Focus on Strength & Muscle Growth)
+        {"name": "Dumbbell Press", "description": "Classic chest press for upper body development", "category": "strength", "intensity": "moderate", "duration_minutes": 15, "calories_burned": 100, "bmi_category": "underweight", "equipment_needed": "Dumbbells", "location_type": "Gym"},
+        {"name": "Bodyweight Squats", "description": "Foundation exercise for leg and glute strength", "category": "strength", "intensity": "moderate", "duration_minutes": 15, "calories_burned": 85, "bmi_category": "underweight", "equipment_needed": "None", "location_type": "Any"},
+        {"name": "Push-ups", "description": "Essential upper body pushing movement", "category": "strength", "intensity": "moderate", "duration_minutes": 10, "calories_burned": 70, "bmi_category": "underweight", "equipment_needed": "None", "location_type": "Home"},
+        {"name": "Seated Rows", "description": "Focus on back thickness and posture", "category": "strength", "intensity": "moderate", "duration_minutes": 15, "calories_burned": 90, "bmi_category": "underweight", "equipment_needed": "Cable Machine", "location_type": "Gym"},
+        {"name": "Diamond Push-ups", "description": "Advanced push-up for triceps focus", "category": "strength", "intensity": "high", "duration_minutes": 10, "calories_burned": 80, "bmi_category": "underweight", "equipment_needed": "None", "location_type": "Home"},
+        {"name": "Plank", "description": "Core stability for overall strength", "category": "flexibility", "intensity": "low", "duration_minutes": 5, "calories_burned": 25, "bmi_category": "underweight", "equipment_needed": "None", "location_type": "Any"},
+
+        # Normal (Balanced - HIIT & Compound Movements)
+        {"name": "Deadlift", "description": "Full body compound power movement", "category": "strength", "intensity": "high", "duration_minutes": 20, "calories_burned": 250, "bmi_category": "normal", "equipment_needed": "Barbell", "location_type": "Gym"},
+        {"name": "Burpees", "description": "High-intensity full body explosive exercise", "category": "cardio", "intensity": "high", "duration_minutes": 15, "calories_burned": 180, "bmi_category": "normal", "equipment_needed": "None", "location_type": "Home"},
+        {"name": "Kettlebell Swings", "description": "Hinge movement for power and endurance", "category": "strength", "intensity": "high", "duration_minutes": 15, "calories_burned": 200, "bmi_category": "normal", "equipment_needed": "Kettlebell", "location_type": "Gym"},
+        {"name": "Jump Rope", "description": "Classic cardio for coordination and fat burn", "category": "cardio", "intensity": "high", "duration_minutes": 20, "calories_burned": 220, "bmi_category": "normal", "equipment_needed": "Jump Rope", "location_type": "Any"},
+        {"name": "Brisk Walking", "description": "Effective steady-state cardio", "category": "cardio", "intensity": "moderate", "duration_minutes": 45, "calories_burned": 250, "bmi_category": "normal", "equipment_needed": "Walking shoes", "location_type": "Any"},
+        {"name": "Cycling", "description": "Great for leg endurance and heart health", "category": "cardio", "intensity": "moderate", "duration_minutes": 40, "calories_burned": 320, "bmi_category": "normal", "equipment_needed": "Bicycle", "location_type": "Outdoors"},
+
+        # Overweight (Burn Calories & Joint Health)
+        {"name": "Elliptical Machine", "description": "Low impact, high calorie burn cardio", "category": "cardio", "intensity": "moderate", "duration_minutes": 30, "calories_burned": 350, "bmi_category": "overweight", "equipment_needed": "Elliptical", "location_type": "Gym"},
+        {"name": "Walking Lunges", "description": "Builds functional leg strength and range", "category": "strength", "intensity": "moderate", "duration_minutes": 15, "calories_burned": 140, "bmi_category": "overweight", "equipment_needed": "None", "location_type": "Any"},
+        {"name": "Incline Walking", "description": "Uphill walk for higher calorie burn", "category": "cardio", "intensity": "high", "duration_minutes": 30, "calories_burned": 400, "bmi_category": "overweight", "equipment_needed": "Treadmill", "location_type": "Gym"},
+        {"name": "Step Aerobics", "description": "Fun rhythm-based calorie burner", "category": "cardio", "intensity": "moderate", "duration_minutes": 30, "calories_burned": 280, "bmi_category": "overweight", "equipment_needed": "Stepper", "location_type": "Home"},
+        {"name": "Chair Squats", "description": "Safe, assisted movement for beginners", "category": "strength", "intensity": "low", "duration_minutes": 10, "calories_burned": 60, "bmi_category": "overweight", "equipment_needed": "Chair", "location_type": "Home"},
+        {"name": "Aqua Jogging", "description": "Zero impact cardio in water", "category": "cardio", "intensity": "moderate", "duration_minutes": 30, "calories_burned": 220, "bmi_category": "overweight", "equipment_needed": "Pool", "location_type": "Any"},
+
+        # Obese (Stability, Mobility & Low Impact)
+        {"name": "Swimming", "description": "Buoyancy makes it the safest for joints", "category": "cardio", "intensity": "moderate", "duration_minutes": 30, "calories_burned": 300, "bmi_category": "obese", "equipment_needed": "Pool", "location_type": "Any"},
+        {"name": "Stationary Bike", "description": "Classic safe cardio while seated", "category": "cardio", "intensity": "low", "duration_minutes": 20, "calories_burned": 150, "bmi_category": "obese", "equipment_needed": "Exercise Bike", "location_type": "Gym"},
+        {"name": "Wall Push-ups", "description": "Reduced weight upper body work", "category": "strength", "intensity": "low", "duration_minutes": 10, "calories_burned": 40, "bmi_category": "obese", "equipment_needed": "Wall", "location_type": "Home"},
+        {"name": "Arm Circles", "description": "Mobility and light toning", "category": "flexibility", "intensity": "low", "duration_minutes": 5, "calories_burned": 15, "bmi_category": "obese", "equipment_needed": "None", "location_type": "Any"},
+        {"name": "Seated Marches", "description": "Low impact heart rate elevation", "category": "cardio", "intensity": "low", "duration_minutes": 15, "calories_burned": 80, "bmi_category": "obese", "equipment_needed": "Chair", "location_type": "Home"},
+        {"name": "Slow Paced Walking", "description": "Consistent daily movement", "category": "cardio", "intensity": "low", "duration_minutes": 20, "calories_burned": 100, "bmi_category": "obese", "equipment_needed": "None", "location_type": "Any"},
     ]
     
+    # Remove existing exercises to avoid duplicates
+    db.query(models_recommendations.Exercise).delete()
+    db.flush()
+
     for exercise_data in exercises_data:
         exercise = models_recommendations.Exercise(**exercise_data)
         db.add(exercise)

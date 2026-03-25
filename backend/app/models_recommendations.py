@@ -44,3 +44,4 @@ class Exercise(Base):
     calories_burned = Column(Integer)  # approximate per session
     bmi_category = Column(String)  # recommended for which BMI category
     equipment_needed = Column(String, nullable=True)
+    location_type = Column(String, default="Any") # e.g., "Gym", "Home", "Any"

@@ -14,7 +14,11 @@ export default function ProfileSetup() {
         weight: '',
         gender: '',
         activity_level: '',
-        health_goals: ''
+        health_goals: '',
+        workout_location: 'Gym',
+        equipment_available: '',
+        injuries_limitations: '',
+        workout_days_per_week: 3
     });
     const [bmi, setBmi] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -30,7 +34,11 @@ export default function ProfileSetup() {
                 weight: user.weight || '',
                 gender: user.gender || '',
                 activity_level: user.activity_level || '',
-                health_goals: user.health_goals || ''
+                health_goals: user.health_goals || '',
+                workout_location: user.workout_location || 'Gym',
+                equipment_available: user.equipment_available || '',
+                injuries_limitations: user.injuries_limitations || '',
+                workout_days_per_week: user.workout_days_per_week || 3
             });
 
             // Fetch BMI if height and weight are set
@@ -66,7 +74,11 @@ export default function ProfileSetup() {
                 weight: !isNaN(weight) ? weight : null,
                 gender: formData.gender || null,
                 activity_level: formData.activity_level || null,
-                health_goals: formData.health_goals || null
+                health_goals: formData.health_goals || null,
+                workout_location: formData.workout_location || null,
+                equipment_available: formData.equipment_available || null,
+                injuries_limitations: formData.injuries_limitations || null,
+                workout_days_per_week: parseInt(formData.workout_days_per_week) || 3
             };
 
             await api.put('/profile/', dataToSend);
@@ -263,6 +275,66 @@ export default function ProfileSetup() {
                                     placeholder="e.g., Lose weight, Build muscle, Maintain health"
                                     rows="3"
                                 />
+                            </div>
+
+                            {/* Fitness Coach Section */}
+                            <div className="pt-6 border-t border-gray-100 space-y-4 animate-slide-up" style={{ animationDelay: '600ms' }}>
+                                <h3 className="text-lg font-bold text-blue-800 flex items-center gap-2">
+                                    <Brain className="w-5 h-5" />
+                                    AI Fitness Coach Settings
+                                </h3>
+
+                                <div className="grid md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-gray-700 font-medium mb-2">Workout Location</label>
+                                        <select
+                                            name="workout_location"
+                                            value={formData.workout_location}
+                                            onChange={handleChange}
+                                            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        >
+                                            <option value="Gym">Gym</option>
+                                            <option value="Home">Home (No Gym Access)</option>
+                                            <option value="Outdoors">Outdoors</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-gray-700 font-medium mb-2">Days per Week</label>
+                                        <input
+                                            type="number"
+                                            name="workout_days_per_week"
+                                            value={formData.workout_days_per_week}
+                                            onChange={handleChange}
+                                            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            min="1"
+                                            max="7"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-gray-700 font-medium mb-2">Equipment Available</label>
+                                    <input
+                                        type="text"
+                                        name="equipment_available"
+                                        value={formData.equipment_available}
+                                        onChange={handleChange}
+                                        className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        placeholder="e.g., Dumbbells, Resistance bands, Pull-up bar"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-gray-700 font-medium mb-2">Injuries or Limitations</label>
+                                    <input
+                                        type="text"
+                                        name="injuries_limitations"
+                                        value={formData.injuries_limitations}
+                                        onChange={handleChange}
+                                        className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        placeholder="e.g., Lower back pain, shoulder injury"
+                                    />
+                                </div>
                             </div>
 
                             <button

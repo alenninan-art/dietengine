@@ -30,6 +30,14 @@ def update_profile(
         current_user.activity_level = profile.activity_level
     if profile.health_goals is not None:
         current_user.health_goals = profile.health_goals
+    if profile.workout_location is not None:
+        current_user.workout_location = profile.workout_location
+    if profile.equipment_available is not None:
+        current_user.equipment_available = profile.equipment_available
+    if profile.injuries_limitations is not None:
+        current_user.injuries_limitations = profile.injuries_limitations
+    if profile.workout_days_per_week is not None:
+        current_user.workout_days_per_week = profile.workout_days_per_week
     
     db.commit()
     db.refresh(current_user)

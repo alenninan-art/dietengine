@@ -8,6 +8,7 @@ import json
 import io
 from openai import OpenAI
 from PIL import Image
+from ultralytics import YOLO
 from .auth import get_current_user
 from .. import models
 
@@ -15,6 +16,14 @@ router = APIRouter(
     prefix="/ai",
     tags=["ai"]
 )
+
+# Initialize YOLOv8 Model (downloads automatically if not present)
+# Using yolov8s.pt (Small) for better accuracy over the Nano variant
+try:
+    yolo_model = YOLO('yolov8s.pt') 
+except Exception as e:
+    print(f"WARNING: YOLO initialization failed: {e}")
+    yolo_model = None
 
 # Professional Food Database (Per Standard Serving) - FALLBACK
 FOOD_DATABASE = {
@@ -31,9 +40,17 @@ FOOD_DATABASE = {
         "calories": 550, "protein": 30, "carbs": 70, "fats": 18, "unit": "1 standard plate (350g)",
         "common_name": "Malabar Chicken Biryani"
     },
+    "masala_biriyani": {
+        "calories": 650, "protein": 28, "carbs": 80, "fats": 22, "unit": "1 standard plate (350g-400g)",
+        "common_name": "Chicken Masala Biriyani"
+    },
     "masala_dosa": {
-        "calories": 380, "protein": 8, "carbs": 65, "fats": 10, "unit": "1 medium Dosa + Chutney",
+        "calories": 420, "protein": 9, "carbs": 68, "fats": 12, "unit": "1 large Dosa + Sambar + Chutnee",
         "common_name": "Masala Dosa"
+    },
+    "alfham_chicken": {
+        "calories": 480, "protein": 45, "carbs": 5, "fats": 32, "unit": "Quarter Chicken piece (Approx 200g)",
+        "common_name": "Alfham Grilled Chicken"
     },
     "idli_with_sambar": {
         "calories": 250, "protein": 10, "carbs": 45, "fats": 4, "unit": "3 pieces Idli + 100ml Sambar",
@@ -79,14 +96,61 @@ FOOD_DATABASE = {
         "calories": 45, "protein": 1, "carbs": 10, "fats": 0.1, "unit": "1 whole coconut water",
         "common_name": "Tender Coconut Water"
     },
+    "burger": {
+        "calories": 550, "protein": 24, "carbs": 45, "fats": 30, "unit": "1 standard burger",
+        "common_name": "Beef/Chicken Burger"
+    },
+    "puttu_and_kadala": {
+        "calories": 450, "protein": 15, "carbs": 75, "fats": 10, "unit": "2 pieces Puttu + 1 cup Kadala curry",
+        "common_name": "Puttu & Kadala Curry"
+    },
+    "appam_and_egg_curry": {
+        "calories": 400, "protein": 18, "carbs": 55, "fats": 14, "unit": "2 Appams + 1 bowl Egg Curry",
+        "common_name": "Appam & Egg Curry"
+    },
 }
 
-async def get_mock_analysis():
-    """Fallback to mock analysis if API unavailable"""
+async def run_yolo_detection(image_bytes: bytes) -> list:
+    """Run YOLOv8 on the image to identify objects for better hint generation"""
+    if not yolo_model:
+        return []
+    
+    try:
+        # Load image for YOLO
+        img = Image.open(io.BytesIO(image_bytes))
+        results = yolo_model(img, verbose=False, conf=0.25)  # Lower conf threshold for more detections
+        
+        # Extract detected class names
+        detected_items = []
+        for result in results:
+            for box in result.boxes:
+                cls_id = int(box.cls[0])
+                name = result.names[cls_id]
+                detected_items.append(name)
+        
+        # Return unique items
+        return list(set(detected_items))
+    except Exception as e:
+        print(f"YOLO detection failed: {e}")
+        return []
+
+async def get_mock_analysis(filename: str = "", yolo_hints: list = []):
+    """Fallback with keyword heuristic + YOLO hints if API unavailable"""
     await asyncio.sleep(1.8) # Simulate processing
-    food_names = list(FOOD_DATABASE.keys())
-    detected_key = random.choice(food_names)
-    food_info = FOOD_DATABASE[detected_key]
+    
+    filename = filename.lower()
+    all_hints = " ".join(yolo_hints).lower() + " " + filename
+    
+    # Priority Heuristics sharpened with YOLO hints
+    detected_key = "burger" if "burger" in all_hints or "fastfood" in all_hints or "sandwich" in all_hints else \
+                  "masala_biriyani" if "biriyani" in all_hints or "biryani" in all_hints or "rice" in all_hints else \
+                  "masala_dosa" if "dosa" in all_hints or "pancake" in all_hints else \
+                  "alfham_chicken" if "alfham" in all_hints or "grilled" in all_hints or "chicken" in all_hints else \
+                  "puttu_and_kadala" if "puttu" in all_hints else \
+                  "appam_and_egg_curry" if "appam" in all_hints else \
+                  random.choice(["masala_dosa", "masala_biriyani", "alfham_chicken", "burger"])
+    
+    food_info = FOOD_DATABASE.get(detected_key, FOOD_DATABASE["masala_biriyani"])
     
     portion_sizes = ["Small", "Medium", "Large"]
     estimated_portion = random.choice(portion_sizes)
@@ -102,17 +166,18 @@ async def get_mock_analysis():
     return {
         "detection": {
             "food_item": food_info["common_name"],
-            "confidence": round(random.uniform(0.88, 0.99), 2),
+            "confidence": 0.87, # Fixed fallback confidence (improved)
             "portion_unit": food_info["unit"],
             "breakdown": []
         },
         "analysis": {
             "estimated_portion": estimated_portion,
             "nutrition": scaled_nutrition,
-            "standards_database": "Internal Nutritional Standards (approx.)"
+            "standards_database": "Keyword-Based Matching (API Service Busy)",
+            "is_fallback": True
         },
-        "disclaimer": "NOTE: These values are approximate estimations based on visual analysis. Actual nutritional content may vary based on exact ingredients and preparation methods.",
-        "message": f"AI successfully identified {food_info['common_name']} with high confidence."
+        "disclaimer": "SERVICE NOTICE: FULL AI analysis is currently unavailable. This is an estimated match based on your file name and our internal database.",
+        "message": f"Identified {food_info['common_name']} via smart match."
     }
 
 def process_image(image_bytes: bytes) -> str:
@@ -138,16 +203,30 @@ def process_image(image_bytes: bytes) -> str:
         print(f"Error processing image: {e}")
         return base64.b64encode(image_bytes).decode('utf-8')
 
-def call_openai_sync(api_key: str, base64_image: str):
+def call_openai_sync(api_key: str, base64_image: str, yolo_hints: list):
     """Synchronous OpenAI call to be run in executor"""
+    hints_str = ", ".join(yolo_hints) if yolo_hints else "No local hints available"
+    
     client = OpenAI(api_key=api_key)
     response = client.chat.completions.create(
-        model="gpt-4o",
+        model="gpt-4o-mini",
         messages=[
             {
                 "role": "user",
                 "content": [
-                    {"type": "text", "text": "Analyze this food image deeply. It is likely an Indian or Kerala meal. Identify ALL visible items (e.g., Rice, Curries, Thoran, Mezhukkupuratti, Papadam, Masala Dosa, Chutney, Sambar). Return a JSON object with: 1. 'food_item': A descriptive name of the ENTIRE meal (e.g., 'Kerala Rice Meal with Fish Curry & Cabbage' or 'Masala Dosa with Sambar & Chutney'), 2. 'confidence': float 0-1, 3. 'portion_unit': 'plate', 4. 'estimated_portion': 'Small/Medium/Large', 5. 'nutrition': Total estimated calories, protein, carbs, fats. 6. 'breakdown': A list of detected sub-items. Output ONLY valid JSON."},
+                    {
+                        "type": "text", 
+                        "text": f"You are an expert food nutritionist with deep knowledge of Indian, Kerala, and international cuisines. "
+                                f"Analyze this food image with high precision. Local object detection suggests these potential items or context: {hints_str}. "
+                                "Carefully examine colors, textures, shapes, plating style, and visible ingredients. "
+                                "It is likely an Indian/Kerala meal or a common fast-food item. Identify ALL visible items including but not limited to: "
+                                "Rice, Curries (Fish/Chicken/Egg/Vegetable), Thoran, Pappadam, Masala Dosa, Chutney, Sambar, Biriyani, Alfham Chicken, Burger, Puttu, Appam, Idli, "
+                                "Chapathi, Parotta, Naan, Fried items, Desserts, and Beverages. "
+                                "Use your expertise to differentiate between visually similar dishes (e.g., Biriyani vs Fried Rice, Masala Dosa vs Plain Dosa). "
+                                "Return a JSON object with: 1. 'food_item': A descriptive name of the ENTIRE meal, 2. 'confidence': float 0-1 (be precise, aim for high accuracy), "
+                                "3. 'portion_unit': 'plate/bowl/piece/cup', 4. 'estimated_portion': 'Small/Medium/Large', "
+                                "5. 'nutrition': {calories, protein, carbs, fats} as numbers, 6. 'breakdown': A list of detected sub-items with individual calorie estimates. Output ONLY valid JSON."
+                    },
                     {
                         "type": "image_url",
                         "image_url": {
@@ -180,12 +259,18 @@ async def estimate_calories(
         f.write(f"OPENAI_API_KEY present: {'Yes' if api_key else 'No'}\n")
         
     if not api_key:
-        print("WARNING: No OPENAI_API_KEY found. Using mock analysis.")
-        return await get_mock_analysis()
+        print("WARNING: No OPENAI_API_KEY found. Using YOLO-enhanced mock analysis.")
+        contents = await file.read()
+        yolo_hints = await run_yolo_detection(contents)
+        return await get_mock_analysis(file.filename, yolo_hints)
         
     try:
         print("DEBUG: Processing image...")
         contents = await file.read()
+        
+        # Run YOLO in background to provide hints
+        yolo_hints = await run_yolo_detection(contents)
+        print(f"DEBUG: YOLO Hints: {yolo_hints}")
         
         # Optimize image in thread pool
         loop = asyncio.get_event_loop()
@@ -193,10 +278,11 @@ async def estimate_calories(
         
         print("DEBUG: Starting OpenAI API call (Sync)...") 
         with open("ai_debug.log", "a") as f:
+            f.write(f"YOLO Hints: {yolo_hints}\n")
             f.write("Starting OpenAI API call (Sync via Executor)...\n")
         
-        # Run OpenAI call in thread pool to prevent blocking/crashing
-        result_content = await loop.run_in_executor(None, call_openai_sync, api_key, base64_image)
+        # Run OpenAI call in thread pool with YOLO hints
+        result_content = await loop.run_in_executor(None, call_openai_sync, api_key, base64_image, yolo_hints)
         
         print(f"DEBUG: OpenAI Response: {result_content}") 
         with open("ai_debug.log", "a") as f:
@@ -214,9 +300,10 @@ async def estimate_calories(
             "analysis": {
                 "estimated_portion": ai_data.get("estimated_portion", "Medium"),
                 "nutrition": ai_data.get("nutrition", {"calories": 0, "protein": 0, "carbs": 0, "fats": 0}),
-                "standards_database": "OpenAI GPT-4o Analysis"
+                "standards_database": "OpenAI Vision Analysis",
+                "is_fallback": False
             },
-            "disclaimer": "NOTE: These values are AI-generated estimations. Actual nutritional content may vary.",
+            "disclaimer": "NOTE: These values are AI-generated estimations based on visual content.",
             "message": f"AI successfully identified {ai_data.get('food_item', 'dish')}."
         }
         
@@ -228,4 +315,4 @@ async def estimate_calories(
             f.write(f"Traceback: {str(e)}\n")
             
         # Fallback to mock if API fails
-        return await get_mock_analysis()
+        return await get_mock_analysis(file.filename)

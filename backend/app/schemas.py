@@ -16,6 +16,12 @@ class UserProfileUpdate(BaseModel):
     gender: Optional[Gender] = None
     activity_level: Optional[ActivityLevel] = None
     health_goals: Optional[str] = None
+    
+    # Fitness Coach Fields
+    workout_location: Optional[str] = None
+    equipment_available: Optional[str] = None
+    injuries_limitations: Optional[str] = None
+    workout_days_per_week: Optional[int] = None
 
 class User(UserBase):
     id: int
@@ -29,6 +35,12 @@ class User(UserBase):
     gender: Optional[Gender] = None
     activity_level: Optional[ActivityLevel] = None
     health_goals: Optional[str] = None
+    
+    # Fitness Coach Fields
+    workout_location: Optional[str] = None
+    equipment_available: Optional[str] = None
+    injuries_limitations: Optional[str] = None
+    workout_days_per_week: Optional[int] = None
 
     class Config:
         from_attributes = True
