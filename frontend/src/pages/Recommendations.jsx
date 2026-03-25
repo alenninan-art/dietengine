@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
-import { Apple, Dumbbell, TrendingUp, Clock, Flame, ArrowLeft, Brain, MessageSquare } from 'lucide-react';
+import { Apple, Dumbbell, TrendingUp, Clock, Flame, ArrowLeft, Brain, MessageSquare, LogOut, UserPlus, Sparkles } from 'lucide-react';
 import api from '../api';
 
 export default function Recommendations() {
@@ -36,26 +36,34 @@ export default function Recommendations() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-                <div className="text-xl text-gray-600">Loading recommendations...</div>
+            <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center">
+                <div className="relative">
+                    <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+                    <div className="mt-6 text-lg font-semibold text-gray-700 animate-pulse text-center">
+                        Personalizing your plans...
+                    </div>
+                </div>
             </div>
         );
     }
 
     if (error) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8">
-                <div className="max-w-4xl mx-auto">
-                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-                        <p className="font-bold">Error</p>
-                        <p>{error}</p>
+            <div className="min-h-screen bg-slate-50 p-8 flex items-center justify-center">
+                <div className="max-w-md w-full glass p-8 bg-white/40 border border-white/50 rounded-2xl shadow-xl text-center">
+                    <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 text-left animate-fade-in">
+                        <p className="text-red-700 text-sm font-medium">{error}</p>
                     </div>
                     <button
                         onClick={() => navigate('/profile')}
-                        className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                        className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-200 transform hover:-translate-y-0.5 active:scale-95 flex items-center justify-center gap-2"
                     >
+                        <UserPlus className="w-5 h-5" />
                         Complete Profile
                     </button>
+                    <p className="mt-6 text-sm text-gray-500">
+                        You need to set your height, weight, and age to get accurate recommendations.
+                    </p>
                 </div>
             </div>
         );
@@ -65,39 +73,42 @@ export default function Recommendations() {
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8">
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
-                <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-                    <div className="flex justify-between items-center">
+                <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm p-6 mb-6 border border-white/50 animate-slide-up">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                         <div>
-                            <h1 className="text-3xl font-bold text-gray-800">Your Personalized Recommendations</h1>
-                            <p className="text-gray-600">Tailored diet plans and exercises based on your profile</p>
+                            <div className="flex items-center gap-2 mb-1">
+                                <Sparkles className="w-5 h-5 text-blue-600" />
+                                <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Personalized Recommendations</h1>
+                            </div>
+                            <p className="text-gray-600 font-medium">Tailored diet plans and exercises specifically for you</p>
                         </div>
-                        <div className="flex gap-3">
+                        <div className="flex flex-wrap gap-2">
                             <button
                                 onClick={() => navigate('/ai')}
-                                className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition flex items-center gap-2"
+                                className="px-4 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all flex items-center gap-2 font-semibold shadow-md shadow-indigo-100 active:scale-95"
                             >
                                 <Brain className="w-4 h-4" />
-                                AI Calorie Scan
+                                AI Scan
                             </button>
                             <button
                                 onClick={() => navigate('/chat')}
-                                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition flex items-center gap-2"
+                                className="px-4 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all flex items-center gap-2 font-semibold shadow-md shadow-blue-100 active:scale-95"
                             >
                                 <MessageSquare className="w-4 h-4" />
                                 AI Chat
                             </button>
                             <button
                                 onClick={() => navigate('/profile')}
-                                className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition flex items-center gap-2"
+                                className="px-4 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-all flex items-center gap-2 font-semibold active:scale-95"
                             >
                                 <ArrowLeft className="w-4 h-4" />
-                                Back to Profile
+                                Profile
                             </button>
                             <button
                                 onClick={logout}
-                                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition"
+                                className="px-4 py-2.5 bg-white border border-red-100 text-red-600 rounded-xl hover:bg-red-50 transition-all flex items-center gap-2 font-semibold active:scale-95"
                             >
-                                Logout
+                                <LogOut className="w-4 h-4" />
                             </button>
                         </div>
                     </div>

@@ -1,16 +1,17 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from .. import models, schemas, utils, schemas_auth
 from ..database import get_db
 from jose import JWTError, jwt
+import logging
 
 router = APIRouter(
     prefix="/auth",
     tags=["auth"]
 )
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     credentials_exception = HTTPException(
@@ -45,9 +46,25 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
     return new_user
 
 @router.post("/login", response_model=schemas_auth.Token)
-def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    user = db.query(models.User).filter(models.User.email == form_data.username).first()
-    if not user or not utils.verify_password(form_data.password, user.hashed_password):
+async def login(request: Request, db: Session = Depends(get_db)):
+    """Accepts either application/x-www-form-urlencoded (OAuth2) or JSON {username, password}"""
+    try:
+        content_type = request.headers.get("content-type", "")
+        if "application/json" in content_type:
+            data = await request.json()
+            username = data.get("username") or data.get("email")
+            password = data.get("password")
+        else:
+            form = await request.form()
+            username = form.get("username")
+            password = form.get("password")
+    except Exception as e:
+        logging.exception("Failed to parse login request")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid login request")
+
+    user = db.query(models.User).filter(models.User.email == username).first()
+    if not user or not utils.verify_password(password, user.hashed_password):
+        logging.warning(f"Failed login attempt for {username}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",

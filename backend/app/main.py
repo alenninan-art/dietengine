@@ -42,16 +42,32 @@ origins = [
     "http://localhost:5173",
     "http://localhost:5174",
     "http://127.0.0.1:5173",
+    "http://192.168.1.34:5173", # Previous Laptop IP
+    "http://192.168.10.187:5173", # Current Laptop IP
     "http://192.168.1.40:5173",
 ]
 frontend_url = os.getenv("FRONTEND_URL")
+env = os.getenv("ENV", "development")
 if frontend_url:
     origins.append(frontend_url)
     logger.info(f"CORS: Added production origin: {frontend_url}")
     print(f"DIAGNOSTIC: FRONTEND_URL found: {frontend_url}", flush=True)
 else:
-    logger.warning("CORS: No FRONTEND_URL found in environment variables.")
-    print("DIAGNOSTIC: No FRONTEND_URL found.", flush=True)
+    # In production we want the deployed frontend to be allowed. If the deploy
+    # environment forgot to set FRONTEND_URL, add the known Vercel origin as a
+    # safe fallback so the site remains usable.
+    if env == "production":
+        fallback_frontend = "https://dietengine.vercel.app"
+        origins.append(fallback_frontend)
+        logger.warning(f"CORS: No FRONTEND_URL set; added fallback origin: {fallback_frontend}")
+        print(f"DIAGNOSTIC: No FRONTEND_URL found; using fallback {fallback_frontend}", flush=True)
+    else:
+        logger.warning("CORS: No FRONTEND_URL found in environment variables.")
+        print("DIAGNOSTIC: No FRONTEND_URL found.", flush=True)
+
+# Log configured CORS origins for diagnostics
+logger.info(f"CORS origins set to: {origins}")
+print(f"DIAGNOSTIC: CORS origins: {origins}", flush=True)
 
 app.add_middleware(
     CORSMiddleware,
@@ -77,7 +93,19 @@ def read_root():
         "environment": os.getenv("ENV", "development")
     }
 
+@app.get("/diagnostics")
+def diagnostics():
+    """
+    Returns simple diagnostic information useful for verifying CORS and env in remote deployments.
+    Avoid exposing sensitive data in production.
+    """
+    return {
+        "environment": env,
+        "frontend_url_env": frontend_url,
+        "cors_origins": origins,
+    }
+
 if __name__ == "__main__":
     import uvicorn
     port = int(os.getenv("PORT", 8000))
-    uvicorn.run("backend.app.main:app", host="0.0.0.0", port=port, reload=False)
+    uvicorn.run(app, host="0.0.0.0", port=port, reload=False)

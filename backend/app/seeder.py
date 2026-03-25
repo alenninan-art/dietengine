@@ -22,7 +22,7 @@ def seed_database(db: Session):
             "meals": [
                 {"meal_type": "breakfast", "name": "Puttu & Kadala Curry", "description": "Steamed rice cake with spicy black chickpeas", "calories": 650, "protein_g": 18, "carbs_g": 95, "fats_g": 22, "price_estimate": 35.0, "quantity": "2 pieces (150g) + 1 cup (200g) curry"},
                 {"meal_type": "snack", "name": "Banana Fritters & Milk", "description": "Kerala Ethakka Appam with whole milk", "calories": 350, "protein_g": 8, "carbs_g": 50, "fats_g": 12, "price_estimate": 25.0, "quantity": "2 pieces (120g) + 1 glass (250ml) milk"},
-                {"meal_type": "lunch", "name": "Neychoru & Chicken Curry", "description": "Budget ghee rice with Kerala chicken masala", "calories": 850, "protein_g": 40, "carbs_g": 90, "fats_g": 35, "price_estimate": 120.0, "quantity": "2 cups (400g) rice + 200g chicken"},
+                {"meal_type": "lunch", "name": "Neychoru & Chicken Curry", "description": "Budget ghee rice with Kerala chicken masala", "calories": 950, "protein_g": 42, "carbs_g": 110, "fats_g": 37, "price_estimate": 130.0, "quantity": "2.5 cups (500g) rice + 200g chicken"},
                 {"meal_type": "snack", "name": "Soya Chunks Stir Fry", "description": "Economic high-protein snack", "calories": 300, "protein_g": 25, "carbs_g": 10, "fats_g": 15, "price_estimate": 20.0, "quantity": "1 cup (150g)"},
                 {"meal_type": "dinner", "name": "Aloo Paratha & Curd", "description": "Wholesome stuffed parathas with homemade yogurt", "calories": 650, "protein_g": 15, "carbs_g": 85, "fats_g": 25, "price_estimate": 50.0, "quantity": "2 pieces (200g) + 1 cup (200g) curd"},
             ]
@@ -38,7 +38,7 @@ def seed_database(db: Session):
             "meals": [
                 {"meal_type": "breakfast", "name": "Masala Dosa & Sambar", "description": "Fermented rice pancake with potato filling", "calories": 450, "protein_g": 10, "carbs_g": 70, "fats_g": 15, "price_estimate": 40.0, "quantity": "1 large dosa (150g) + 1 cup (240ml) sambar"},
                 {"meal_type": "snack", "name": "Boiled Eggs", "description": "High-quality affordable protein", "calories": 155, "protein_g": 13, "carbs_g": 1, "fats_g": 11, "price_estimate": 12.0, "quantity": "2 large eggs (100g)"},
-                {"meal_type": "lunch", "name": "Red Rice & Avial", "description": "Kerala red rice with mixed vegetable coconut stew", "calories": 650, "protein_g": 20, "carbs_g": 85, "fats_g": 25, "price_estimate": 60.0, "quantity": "1.5 cups (300g) rice + 1 cup (200g) avial"},
+                {"meal_type": "lunch", "name": "Red Rice & Avial", "description": "Kerala red rice with mixed vegetable coconut stew", "calories": 720, "protein_g": 22, "carbs_g": 100, "fats_g": 26, "price_estimate": 65.0, "quantity": "2 cups (400g) rice + 1 cup (200g) avial"},
                 {"meal_type": "snack", "name": "Roasted Peanuts", "description": "Budget-friendly healthy fats", "calories": 200, "protein_g": 8, "carbs_g": 6, "fats_g": 16, "price_estimate": 10.0, "quantity": "1/4 cup (30g)"},
                 {"meal_type": "dinner", "name": "Chappathi & Dal Tadka", "description": "Whole wheat rotis with high-fiber yellow lentils", "calories": 745, "protein_g": 30, "carbs_g": 100, "fats_g": 20, "price_estimate": 45.0, "quantity": "3 pieces (150g) + 1 cup (200g) dal"},
             ]
@@ -68,7 +68,7 @@ def seed_database(db: Session):
             "meals": [
                 {"meal_type": "breakfast", "name": "Besan Chilla", "description": "Gram flour pancakes with lots of spinach", "calories": 300, "protein_g": 15, "carbs_g": 35, "fats_g": 10, "price_estimate": 25.0, "quantity": "2 medium pieces (140g)"},
                 {"meal_type": "snack", "name": "Roasted Chana", "description": "Fiber-rich roasted chickpeas", "calories": 150, "protein_g": 8, "carbs_g": 20, "fats_g": 4, "price_estimate": 8.0, "quantity": "1/2 cup (50g)"},
-                {"meal_type": "lunch", "name": "Kanji & Whole Payar", "description": "Minimal rice gruel with protein-rich green gram", "calories": 450, "protein_g": 22, "carbs_g": 65, "fats_g": 10, "price_estimate": 25.0, "quantity": "1 bowl (300ml) kanji + 1/2 cup (100g) payar"},
+                {"meal_type": "lunch", "name": "Kanji & Whole Payar", "description": "Rice gruel with protein-rich green gram", "calories": 520, "protein_g": 24, "carbs_g": 80, "fats_g": 11, "price_estimate": 28.0, "quantity": "1.5 bowls (450ml) kanji + 1/2 cup (100g) payar"},
                 {"meal_type": "snack", "name": "Cucumber Salad", "description": "Sliced cucumbers with black salt", "calories": 50, "protein_g": 1, "carbs_g": 8, "fats_g": 0, "price_estimate": 10.0, "quantity": "200g slices"},
                 {"meal_type": "dinner", "name": "Soya Chunk Curry & Roti", "description": "High-protein meat substitute with single whole wheat roti", "calories": 650, "protein_g": 45, "carbs_g": 70, "fats_g": 15, "price_estimate": 35.0, "quantity": "1.5 cups (300g) curry + 1 roti (50g)"},
             ]

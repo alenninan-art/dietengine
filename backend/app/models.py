@@ -3,16 +3,16 @@ from .database import Base
 import enum
 
 class Gender(str, enum.Enum):
-    MALE = "male"
-    FEMALE = "female"
-    OTHER = "other"
+    male = "male"
+    female = "female"
+    other = "other"
 
 class ActivityLevel(str, enum.Enum):
-    SEDENTARY = "sedentary"
-    LIGHTLY_ACTIVE = "lightly_active"
-    MODERATELY_ACTIVE = "moderately_active"
-    VERY_ACTIVE = "very_active"
-    EXTRA_ACTIVE = "extra_active"
+    sedentary = "sedentary"
+    lightly_active = "lightly_active"
+    moderately_active = "moderately_active"
+    very_active = "very_active"
+    extra_active = "extra_active"
 
 class User(Base):
     __tablename__ = "users"

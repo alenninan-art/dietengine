@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
-import { User, Scale, Ruler, Calendar, Activity, Target, ArrowRight, LayoutDashboard, Utensils, Brain, MessageSquare } from 'lucide-react';
+import { User, Scale, Ruler, Calendar, Activity, Target, ArrowRight, LayoutDashboard, Utensils, Brain, MessageSquare, ShieldCheck, LogOut } from 'lucide-react';
 import api from '../api';
 
 export default function ProfileSetup() {
-    const { user, logout } = useAuth();
+    const { user, logout, checkUser } = useAuth();
     const navigate = useNavigate();
     const [formData, setFormData] = useState({
         full_name: '',
@@ -19,6 +19,7 @@ export default function ProfileSetup() {
     const [bmi, setBmi] = useState(null);
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
+    const [error, setError] = useState('');
 
     useEffect(() => {
         if (user) {
@@ -54,18 +55,24 @@ export default function ProfileSetup() {
         setSuccess(false);
 
         try {
+            const age = parseInt(formData.age);
+            const height = parseFloat(formData.height);
+            const weight = parseFloat(formData.weight);
+
             const dataToSend = {
                 full_name: formData.full_name || null,
-                age: formData.age ? parseInt(formData.age) : null,
-                height: formData.height ? parseFloat(formData.height) : null,
-                weight: formData.weight ? parseFloat(formData.weight) : null,
+                age: !isNaN(age) ? age : null,
+                height: !isNaN(height) ? height : null,
+                weight: !isNaN(weight) ? weight : null,
                 gender: formData.gender || null,
                 activity_level: formData.activity_level || null,
                 health_goals: formData.health_goals || null
             };
 
             await api.put('/profile/', dataToSend);
+            await checkUser();
             setSuccess(true);
+
 
             // Fetch updated BMI if height and weight are set
             if (formData.height && formData.weight) {
@@ -73,7 +80,7 @@ export default function ProfileSetup() {
             }
         } catch (error) {
             console.error('Failed to update profile:', error);
-            alert('Failed to update profile. Please try again.');
+            setError(error.response?.data?.detail || 'Failed to update profile. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -98,8 +105,9 @@ export default function ProfileSetup() {
                         </div>
                         <button
                             onClick={logout}
-                            className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition shadow-md"
+                            className="px-4 py-2 bg-white/50 border border-red-200 text-red-600 rounded-xl hover:bg-red-50 transition shadow-sm flex items-center gap-2 font-medium"
                         >
+                            <LogOut className="w-4 h-4" />
                             Logout
                         </button>
                     </div>
@@ -110,16 +118,25 @@ export default function ProfileSetup() {
                     <div className="md:col-span-2 bg-white rounded-lg shadow-md p-6 animate-slide-up" style={{ animationDelay: '100ms' }}>
                         <h2 className="text-2xl font-bold text-gray-800 mb-6">Your Information</h2>
 
+                        {error && (
+                            <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 animate-fade-in">
+                                <p className="text-red-700 text-sm font-medium">{error}</p>
+                            </div>
+                        )}
+
                         {success && (
                             <div className="mb-6 animate-pop">
-                                <div className="p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg mb-4 flex items-center justify-between shadow-sm">
-                                    <span>Profile updated successfully!</span>
+                                <div className="p-4 bg-green-50 border-l-4 border-green-500 text-green-700 rounded-xl mb-4 flex items-center justify-between shadow-sm">
+                                    <div className="flex items-center gap-2">
+                                        <ShieldCheck className="w-5 h-5 text-green-600" />
+                                        <span className="font-semibold">Profile updated successfully!</span>
+                                    </div>
                                     <button
                                         onClick={() => navigate('/recommendations')}
-                                        className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-green-700 transition flex items-center gap-2"
+                                        className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-green-700 transition flex items-center gap-2 shadow-md shadow-green-200"
                                     >
                                         <ArrowRight className="w-4 h-4" />
-                                        Continue to Dashboard
+                                        View Results
                                     </button>
                                 </div>
                             </div>
