@@ -29,7 +29,7 @@ const checkBackendHealth = async () => {
     try {
         await api.get('/');
         return true;
-    } catch (error) {
+    } catch {
         return false;
     }
 };

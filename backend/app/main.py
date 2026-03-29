@@ -1,5 +1,4 @@
 import os
-import sys
 import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -9,13 +8,13 @@ from dotenv import load_dotenv
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+load_dotenv(os.path.join(ROOT_DIR, ".env"))
+
 print("--- DIET ENGINE STARTUP ---", flush=True)
 from .database import engine, Base
 from . import models, models_recommendations
 from .routers import auth, profile, recommendations, ai, chat
-
-# Load environment variables for production
-load_dotenv()
 
 # Create tables if they don't exist
 Base.metadata.create_all(bind=engine)

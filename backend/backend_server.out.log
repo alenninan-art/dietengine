@@ -1,0 +1,15 @@
+--- DIET ENGINE STARTUP ---
+DIAGNOSTIC: No FRONTEND_URL found.
+Auto-seeding database with Indian & Kerala culture diet plans...
+Database seeding completed.
+INFO:     127.0.0.1:63817 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51192 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64748 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61138 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53677 - "OPTIONS / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53677 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63181 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55819 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64291 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63242 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53021 - "GET / HTTP/1.1" 200 OK

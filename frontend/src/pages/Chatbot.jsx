@@ -12,6 +12,7 @@ export default function Chatbot() {
     const [inputValue, setInputValue] = useState('');
     const [loading, setLoading] = useState(false);
     const [isBackendOnline, setIsBackendOnline] = useState(true);
+    const [isLiteMode, setIsLiteMode] = useState(false);
     const messagesEndRef = useRef(null);
 
     const scrollToBottom = () => {
@@ -46,6 +47,9 @@ export default function Chatbot() {
         try {
             const response = await api.post('/chat', { message: userMsg });
             setMessages(prev => [...prev, { role: 'bot', text: response.data.reply }]);
+            if (response.data.is_fallback) {
+                setIsLiteMode(true);
+            }
         } catch (error) {
             console.error('Chat failed:', error);
             let errorMessage = 'I encountered a small hiccup. Please try again.';
@@ -96,9 +100,9 @@ export default function Chatbot() {
                         <div>
                             <h1 className="text-lg font-extrabold text-gray-900 leading-none">Health Assistant</h1>
                             <div className="flex items-center gap-1.5 mt-1">
-                                <div className={`w-2 h-2 rounded-full ${isBackendOnline ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
+                                <div className={`w-2 h-2 rounded-full ${isBackendOnline ? (isLiteMode ? 'bg-amber-500' : 'bg-green-500 animate-pulse') : 'bg-red-500'}`}></div>
                                 <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                    {isBackendOnline ? 'AI Powered' : 'Server Offline'}
+                                    {!isBackendOnline ? 'Server Offline' : (isLiteMode ? 'AI Lite Mode' : 'AI Powered')}
                                 </span>
                             </div>
                         </div>
@@ -126,7 +130,7 @@ export default function Chatbot() {
                                     ? 'bg-gradient-to-br from-indigo-600 to-blue-700 text-white rounded-tr-none'
                                     : 'bg-white text-gray-800 rounded-tl-none border border-gray-100'
                                     }`}>
-                                    <p className="text-sm md:text-base leading-relaxed font-medium">
+                                    <p className="text-sm md:text-base leading-relaxed font-medium whitespace-pre-wrap">
                                         {msg.text}
                                     </p>
                                     <span className={`text-[10px] mt-2 block opacity-50 font-bold uppercase tracking-tighter ${msg.role === 'user' ? 'text-right' : 'text-left'}`}>
