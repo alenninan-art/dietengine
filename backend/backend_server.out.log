@@ -1,15 +1,65 @@
 --- DIET ENGINE STARTUP ---
 DIAGNOSTIC: No FRONTEND_URL found.
 Auto-seeding database with Indian & Kerala culture diet plans...
+Seeded 108 Kerala food items.
 Database seeding completed.
-INFO:     127.0.0.1:63817 - "GET / HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51192 - "GET / HTTP/1.1" 200 OK
-INFO:     127.0.0.1:64748 - "GET / HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61138 - "GET / HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53677 - "OPTIONS / HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53677 - "GET / HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63181 - "GET / HTTP/1.1" 200 OK
-INFO:     127.0.0.1:55819 - "GET / HTTP/1.1" 200 OK
-INFO:     127.0.0.1:64291 - "GET / HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63242 - "GET / HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53021 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65295 - "GET /diagnostics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65296 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65298 - "POST /auth/login HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:65300 - "POST /auth/register HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54367 - "POST /auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54369 - "POST /auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54369 - "PUT /profile/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54369 - "GET /recommendations/diet HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54369 - "GET /recommendations/exercise HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54369 - "POST /tracking/foods HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54369 - "GET /tracking/foods/summary HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60322 - "OPTIONS /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64327 - "OPTIONS /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64327 - "GET /auth/me HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:64327 - "GET /auth/me HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:58945 - "GET /login HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:58946 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:63135 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63137 - "POST /auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63139 - "POST /auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63141 - "GET /recommendations/diet HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63143 - "GET /tracking/foods/summary HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53888 - "GET /login HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:52362 - "GET /login HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:60886 - "GET /login HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:56656 - "GET /login HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:60050 - "GET /login HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:52215 - "POST /auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52215 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52215 - "OPTIONS /recommendations/diet HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64005 - "OPTIONS /recommendations/exercise HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50540 - "OPTIONS /tracking/foods/summary HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57331 - "OPTIONS /tracking/foods?limit=6 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52215 - "OPTIONS /tracking/foods/summary HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54771 - "OPTIONS /recommendations/diet HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64005 - "OPTIONS /tracking/foods?limit=6 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51161 - "OPTIONS /recommendations/exercise HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52215 - "GET /tracking/foods/summary HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54913 - "GET /recommendations/diet HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52624 - "GET /recommendations/exercise HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56096 - "GET /tracking/foods?limit=6 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52215 - "GET /recommendations/diet HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64005 - "GET /tracking/foods/summary HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52624 - "GET /tracking/foods?limit=6 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54913 - "GET /recommendations/exercise HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63623 - "OPTIONS /diagnostics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52553 - "OPTIONS /diagnostics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63623 - "GET /diagnostics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52553 - "GET /diagnostics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52553 - "OPTIONS /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63623 - "GET /diagnostics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52553 - "POST /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52553 - "GET /diagnostics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52553 - "POST /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63623 - "GET /diagnostics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63623 - "GET /diagnostics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63311 - "GET /diagnostics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53777 - "GET /diagnostics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56764 - "GET /diagnostics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51061 - "GET /diagnostics HTTP/1.1" 200 OK

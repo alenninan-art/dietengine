@@ -6,18 +6,23 @@ from dotenv import load_dotenv
 load_dotenv(dotenv_path="../.env")
 
 api_key = os.getenv("OPENAI_API_KEY")
-print(f"API Key found: {api_key[:10]}...")
+base_url = os.getenv("OPENAI_BASE_URL")
+model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 
 if not api_key:
     print("Error: No API key found.")
     exit(1)
 
-client = OpenAI(api_key=api_key)
+client_kwargs = {"api_key": api_key}
+if base_url:
+    client_kwargs["base_url"] = base_url
+
+client = OpenAI(**client_kwargs)
 
 try:
     print("Sending request to OpenAI...")
     completion = client.chat.completions.create(
-        model="gpt-4o-mini",
+        model=model,
         messages=[{"role": "user", "content": "Hello, are you working?"}],
         max_tokens=10,
         timeout=10

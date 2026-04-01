@@ -2,7 +2,15 @@ import axios from 'axios';
 
 const getBaseURL = () => {
     if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
-    // Default to same origin (useful for deployed setups where API is proxied to same domain)
+
+    // In local development, the React app runs on Vite while the API runs on FastAPI.
+    if (import.meta.env.DEV) {
+        const protocol = window.location.protocol;
+        const hostname = window.location.hostname;
+        return `${protocol}//${hostname}:8000`;
+    }
+
+    // Default to same origin for deployed setups where the API is served from the same domain.
     const protocol = window.location.protocol;
     const hostname = window.location.hostname;
     const port = window.location.port ? `:${window.location.port}` : '';
@@ -27,7 +35,7 @@ api.interceptors.request.use((config) => {
 
 const checkBackendHealth = async () => {
     try {
-        await api.get('/');
+        await api.get('/diagnostics');
         return true;
     } catch {
         return false;

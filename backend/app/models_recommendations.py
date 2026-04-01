@@ -1,6 +1,7 @@
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, Text
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, Text, DateTime
 from sqlalchemy.orm import relationship
 from .database import Base
+from datetime import datetime
 
 class DietPlan(Base):
     __tablename__ = "diet_plans"
@@ -45,3 +46,33 @@ class Exercise(Base):
     bmi_category = Column(String)  # recommended for which BMI category
     equipment_needed = Column(String, nullable=True)
     location_type = Column(String, default="Any") # e.g., "Gym", "Home", "Any"
+
+
+class FoodItem(Base):
+    __tablename__ = "food_items"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, index=True, nullable=False)
+    cuisine = Column(String, nullable=True)
+    course = Column(String, nullable=True)
+    diet = Column(String, nullable=True)
+    servings = Column(String, nullable=True)
+    prep_time_minutes = Column(Integer, nullable=True)
+    cook_time_minutes = Column(Integer, nullable=True)
+    total_time_minutes = Column(Integer, nullable=True)
+    ingredients = Column(Text, nullable=True)
+    instructions = Column(Text, nullable=True)
+
+
+class UserFoodTracking(Base):
+    __tablename__ = "user_food_tracking"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    meal_name = Column(String, nullable=False)
+    meal_type = Column(String, nullable=True)
+    selected_option = Column(String, nullable=False)
+    source_plan = Column(String, nullable=True)
+    price_estimate = Column(Float, default=0.0)
+    notes = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)

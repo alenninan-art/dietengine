@@ -14,7 +14,8 @@ load_dotenv(os.path.join(ROOT_DIR, ".env"))
 print("--- DIET ENGINE STARTUP ---", flush=True)
 from .database import engine, Base
 from . import models, models_recommendations
-from .routers import auth, profile, recommendations, ai, chat
+from .llm_config import get_llm_diagnostics
+from .routers import auth, profile, recommendations, ai, chat, tracking
 
 # Create tables if they don't exist
 Base.metadata.create_all(bind=engine)
@@ -68,6 +69,7 @@ app.include_router(profile.router)
 app.include_router(recommendations.router)
 app.include_router(ai.router)
 app.include_router(chat.router)
+app.include_router(tracking.router)
 
 @app.get("/")
 def read_root():
@@ -88,6 +90,10 @@ def diagnostics():
         "frontend_url_env": frontend_url,
         "cors_origins": origins,
     }
+
+@app.get("/diagnostics/llm")
+def llm_diagnostics():
+    return get_llm_diagnostics()
 
 if __name__ == "__main__":
     import uvicorn

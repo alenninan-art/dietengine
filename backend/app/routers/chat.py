@@ -1,16 +1,18 @@
 import os
 import random
 import traceback
+import re
 
 from dotenv import load_dotenv
 from fastapi import APIRouter, Depends
-from openai import OpenAI
 import google.generativeai as genai
 from pydantic import BaseModel
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from .. import models, models_recommendations
 from ..database import get_db
+from ..llm_config import get_openai_client, get_openai_settings
 from ..routers.auth import get_current_user
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -20,14 +22,6 @@ router = APIRouter(
     prefix="/chat",
     tags=["chat"]
 )
-
-
-def get_openai_client():
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        return None
-    return OpenAI(api_key=api_key)
-
 
 def get_gemini_model():
     api_key = os.getenv("GEMINI_API_KEY")
@@ -77,9 +71,20 @@ WORKOUT_KEYWORDS = ["exercise", "exercises", "workout", "workouts", "training", 
 BMI_KEYWORDS = ["bmi", "body mass index", "my weight", "check my weight", "current weight"]
 PROTEIN_KEYWORDS = ["protein", "protien", "amino"]
 CALORIE_KEYWORDS = ["calorie", "calories", "kcal", "energy"]
+PREWORKOUT_KEYWORDS = ["preworkout", "pre workout", "pre-workout", "before workout", "before gym", "before training"]
+SNACK_KEYWORDS = ["snack", "snacks", "hungry", "munch", "munching", "light food", "evening snack"]
 PLAN_REQUEST_KEYWORDS = [
     "diet plan", "meal plan", "weight loss plan", "lose weight", "reduce weight",
     "reducing weight", "weight reducing", "give me diet", "full plan",
+]
+
+HEALTHY_SNACK_SUGGESTIONS = [
+    "boiled eggs with cucumber",
+    "fruit with curd",
+    "sprouts salad",
+    "roasted chana or peanuts",
+    "paneer pepper bites",
+    "buttermilk with a small handful of nuts",
 ]
 
 
@@ -89,6 +94,32 @@ def has_any_keyword(message: str, keywords: list[str]) -> bool:
 
 def user_asked_for_tips(message: str) -> bool:
     return has_any_keyword(message, ["tip", "tips", "advice", "guidance", "suggest", "suggestion"])
+
+
+def build_general_fallback_response(message: str) -> str:
+    if has_any_keyword(message, PREWORKOUT_KEYWORDS):
+        return (
+            "Pre-Workout:\n"
+            "- Eat a light snack 30-90 minutes before training, like a banana with curd, oats, or toast with peanut butter.\n"
+            "Tip:\n"
+            "- If you use a pre-workout supplement, start with a low dose and avoid taking it late in the evening."
+        )
+    if "oats" in message:
+        return "Diet:\n- Oats are a good breakfast choice because they are filling and high in fiber."
+    if "breakfast" in message:
+        return "Diet:\n- A balanced breakfast with protein and fiber can help you stay full longer."
+    if "lunch" in message or "dinner" in message:
+        return "Diet:\n- Try to build meals around protein, vegetables, and a moderate portion of carbs."
+    if "water" in message or "hydrate" in message:
+        return "Hydration:\n- Aim to sip water through the day and drink extra around workouts."
+    if "sleep" in message:
+        return "Recovery:\n- Good sleep supports hunger control, recovery, and consistent progress."
+    return (
+        "Diet:\n"
+        "- Focus on simple, balanced meals with protein, fiber, and enough water.\n"
+        "Tip:\n"
+        "- Ask me for a diet plan, workout plan, or calorie estimate for more specific help."
+    )
 
 
 def get_requested_workout_location(message: str, fallback_location: str) -> str:
@@ -114,6 +145,34 @@ def format_exercise_list(exercises: list[models_recommendations.Exercise]) -> st
         lines.append(
             f"- {exercise.name}: {exercise.duration_minutes} min, {exercise.intensity} intensity{equipment}"
         )
+    return "\n".join(lines)
+
+
+def search_food_catalog(db: Session, message: str, limit: int = 3) -> list[models_recommendations.FoodItem]:
+    keywords = [word for word in re.findall(r"[a-zA-Z]+", message.lower()) if len(word) >= 3]
+    if keywords:
+        filters = []
+        for keyword in keywords[:6]:
+            like = f"%{keyword}%"
+            filters.extend([
+                models_recommendations.FoodItem.name.ilike(like),
+                models_recommendations.FoodItem.ingredients.ilike(like),
+                models_recommendations.FoodItem.course.ilike(like),
+            ])
+        return db.query(models_recommendations.FoodItem).filter(or_(*filters)).limit(limit).all()
+
+    return db.query(models_recommendations.FoodItem).limit(limit).all()
+
+
+def build_food_catalog_response(items: list[models_recommendations.FoodItem]) -> str:
+    if not items:
+        return "Diet:\n- I couldn't find matching Kerala dishes in the food catalog right now."
+
+    lines = ["Kerala Foods:"]
+    for item in items[:3]:
+        course = f" ({item.course})" if item.course else ""
+        diet = f" - {item.diet}" if item.diet else ""
+        lines.append(f"- {item.name}{course}{diet}")
     return "\n".join(lines)
 
 
@@ -180,6 +239,57 @@ def build_workout_response(
             "- Focus on good form and increase slowly.",
         ])
     return "\n".join(response_lines)
+
+
+def build_preworkout_response(user_msg: str) -> str:
+    wants_supplement = any(word in user_msg for word in ["supplement", "powder", "caffeine", "drink", "booster"])
+    wants_meal = any(word in user_msg for word in ["eat", "food", "meal", "snack", "banana", "oats", "bread", "toast"])
+
+    if wants_supplement and wants_meal:
+        return (
+            "Pre-Workout:\n"
+            "- A light carb snack like banana, toast, or oats 30-90 minutes before training works well.\n"
+            "- If you use a pre-workout supplement, start with a low dose and check your caffeine tolerance.\n"
+            "Tip:\n"
+            "- Avoid high-stimulant pre-workouts close to bedtime and drink water before training."
+        )
+
+    if wants_supplement:
+        return (
+            "Pre-Workout Supplement:\n"
+            "- Start with a low dose to assess tolerance, especially if it contains caffeine.\n"
+            "- Avoid mixing multiple stimulant products and do not use it late in the evening.\n"
+            "Tip:\n"
+            "- If you feel jittery, reduce the dose or switch to a simple pre-workout snack instead."
+        )
+
+    return (
+        "Pre-Workout:\n"
+        "- Good options are banana with peanut butter, oats with curd, or toast with eggs 30-90 minutes before training.\n"
+        "- Keep it light so you have energy without feeling too full during the workout.\n"
+        "Tip:\n"
+        "- Add water before your session, especially if you train in the heat."
+    )
+
+
+def build_snack_response(user_msg: str) -> str:
+    wants_healthy = any(word in user_msg for word in ["healthy", "good", "best", "protein", "weight loss", "low calorie"])
+    snack_list = ", ".join(HEALTHY_SNACK_SUGGESTIONS)
+
+    if wants_healthy:
+        return (
+            "Snacks:\n"
+            f"- Try {snack_list}.\n"
+            "Tip:\n"
+            "- Pick one protein or fiber-rich snack and keep fried bakery snacks for occasional cravings."
+        )
+
+    return (
+        "Snacks:\n"
+        "- Better snack swaps are fruit, buttermilk, boiled eggs, roasted chana, sprouts salad, or a small curd bowl.\n"
+        "Tip:\n"
+        "- If you get hungry often, add more protein to your main meals so snack cravings stay lower."
+    )
 
 
 def build_combined_plan_response(
@@ -270,9 +380,16 @@ async def chat_with_ai(
         asks_for_diet = has_any_keyword(user_msg, DIET_KEYWORDS)
         asks_for_workout = has_any_keyword(user_msg, WORKOUT_KEYWORDS)
         asks_for_bmi = has_any_keyword(user_msg, BMI_KEYWORDS)
+        asks_for_preworkout = has_any_keyword(user_msg, PREWORKOUT_KEYWORDS)
         asks_for_plan = has_any_keyword(user_msg, PLAN_REQUEST_KEYWORDS)
+        asks_for_kerala_foods = any(
+            word in user_msg for word in ["kerala", "culture", "traditional", "indian", "local", "recipe", "dish", "dishes"]
+        )
 
-        if asks_for_plan and asks_for_workout:
+        if asks_for_preworkout:
+            response = build_preworkout_response(user_msg)
+
+        elif asks_for_plan and asks_for_workout:
             response = build_combined_plan_response(
                 nickname,
                 goal,
@@ -293,6 +410,12 @@ async def chat_with_ai(
 
         elif asks_for_plan or user_msg in ["i want to lose weight", "lose weight", "weight loss", "weight reducing tips"]:
             response = build_diet_response(nickname, goal, bmi_cat, plan, user_msg)
+
+        elif asks_for_kerala_foods:
+            response = build_food_catalog_response(search_food_catalog(db, user_msg))
+
+        elif asks_for_preworkout:
+            response = build_preworkout_response(user_msg)
 
         if response:
             return {
@@ -334,6 +457,7 @@ async def chat_with_ai(
                     "- Always give short, clear, and easy-to-understand answers.\n"
                     "- Respond in a friendly and conversational tone.\n"
                     "- Provide practical diet suggestions when possible.\n"
+                    "- You can suggest pre-workout meals and basic pre-workout supplement safety guidance.\n"
                     "- Use simple language suitable for beginners.\n"
                     "- If the question is unclear, ask a follow-up question.\n"
                     "- Give personalized suggestions based on age, weight, and goal when available.\n"
@@ -369,6 +493,7 @@ async def chat_with_ai(
         client = get_openai_client()
         if client:
             try:
+                openai_settings = get_openai_settings()
                 system_prompt = (
                     "You are the 'Diet Engine Expert AI & Fitness Coach', a professional health, nutrition, and fitness consultant.\n"
                     "Current User Profile:\n"
@@ -398,6 +523,7 @@ async def chat_with_ai(
                     "- Always give short, clear, and easy-to-understand answers.\n"
                     "- Respond in a friendly and conversational tone.\n"
                     "- Provide practical diet suggestions when possible.\n"
+                    "- You can suggest pre-workout meals and basic pre-workout supplement safety guidance.\n"
                     "- Use simple language suitable for beginners.\n"
                     "- If the question is unclear, ask a follow-up question.\n"
                     "- Give personalized suggestions based on age, weight, and goal when available.\n"
@@ -410,7 +536,7 @@ async def chat_with_ai(
                 )
 
                 completion = client.chat.completions.create(
-                    model="gpt-4o-mini",
+                    model=openai_settings["model"] or "gpt-4o-mini",
                     messages=[
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": chat_input.message},
@@ -422,7 +548,7 @@ async def chat_with_ai(
                     "reply": completion.choices[0].message.content,
                     "user": current_user.email,
                     "is_fallback": False,
-                    "provider": "openai"
+                    "provider": openai_settings["provider"] or "openai"
                 }
             except Exception as exc:
                 print(f"OpenAI Error: {exc}")
@@ -463,6 +589,9 @@ async def chat_with_ai(
         elif asks_for_diet:
             response = build_diet_response(nickname, goal, bmi_cat, plan, user_msg)
 
+        elif asks_for_preworkout:
+            response = build_preworkout_response(user_msg)
+
         elif asks_for_workout:
             response = build_workout_response(
                 nickname, goal, exercises, workout_loc, equipment, injuries, days_per_week, user_msg
@@ -479,20 +608,14 @@ async def chat_with_ai(
             else:
                 response = f"I'd love to help with your BMI, {nickname}! Please enter your height and weight in your profile page first."
 
-        elif any(word in user_msg for word in ["kerala", "culture", "traditional", "indian", "local"]):
-            response = "Diet:\n- Foods like red rice, appam, puttu, and fish curry can fit well in a healthy plan."
-
         elif any(word in user_msg for word in ["budget", "cheap", "cost", "price", "expensive"]):
             response = "Diet:\n- Budget-friendly foods are eggs, dal, curd, oats, bananas, peanuts, and vegetables."
 
         elif any(word in user_msg for word in ["water", "hydrate", "drink", "sambharam", "buttermilk"]):
             response = "Hydration:\n- Drink enough water through the day.\n- Buttermilk and lemon water are good low-calorie choices."
 
-        elif any(word in user_msg for word in ["snack", "junk", "hungry", "munch"]):
-            if "healthy" in user_msg or "good" in user_msg:
-                response = "Diet:\n- Healthy snacks are boiled eggs, fruit with curd, roasted peanuts, or sprouts."
-            else:
-                response = "Diet:\n- Try fruit, buttermilk, boiled eggs, or roasted chana instead of deep-fried snacks."
+        elif has_any_keyword(user_msg, SNACK_KEYWORDS) or "junk" in user_msg:
+            response = build_snack_response(user_msg)
 
         elif any(word in user_msg for word in ["biriyani", "biryani", "dosa", "alfham", "grilled"]):
             if "biriyani" in user_msg or "biryani" in user_msg:
@@ -511,11 +634,7 @@ async def chat_with_ai(
             response = "I am your diet and fitness assistant."
 
         else:
-            tip = random.choice(CHAT_RESPONSES)
-            response = (
-                f"{tip}\n"
-                "Ask me if you want a diet plan or workout plan."
-            )
+            response = build_general_fallback_response(user_msg)
 
     except Exception as exc:
         print(f"CRITICAL CHAT ERROR: {exc}")
