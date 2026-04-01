@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import api, { API_BASE } from '../api';
+import api, { API_BASE, API_CONFIG_ERROR } from '../api';
 import { AuthContext } from './AuthContext';
 
 // Token logic moved to api.js
@@ -9,6 +9,11 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
 
     const checkUser = useCallback(async () => {
+        if (API_CONFIG_ERROR) {
+            setUser(null);
+            setLoading(false);
+            return;
+        }
         const token = localStorage.getItem('token');
         if (token) {
             try {
@@ -28,6 +33,10 @@ export const AuthProvider = ({ children }) => {
     }, [checkUser]);
 
     const login = async (email, password) => {
+        if (API_CONFIG_ERROR) {
+            return { success: false, message: API_CONFIG_ERROR };
+        }
+
         const params = new URLSearchParams();
         params.append('username', email);
         params.append('password', password);
@@ -76,6 +85,10 @@ export const AuthProvider = ({ children }) => {
     };
 
     const register = async (email, password) => {
+        if (API_CONFIG_ERROR) {
+            return { success: false, message: API_CONFIG_ERROR };
+        }
+
         try {
             await api.post('/auth/register', { email, password });
             return await login(email, password);

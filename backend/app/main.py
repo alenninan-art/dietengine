@@ -46,11 +46,12 @@ origins = [
     "http://192.168.1.34:5173", # Previous Laptop IP
     "http://192.168.1.40:5173",
 ]
-frontend_url = os.getenv("FRONTEND_URL")
-if frontend_url:
-    origins.append(frontend_url)
-    logger.info(f"CORS: Added production origin: {frontend_url}")
-    print(f"DIAGNOSTIC: FRONTEND_URL found: {frontend_url}", flush=True)
+frontend_urls_raw = os.getenv("FRONTEND_URL", "")
+frontend_urls = [url.strip() for url in frontend_urls_raw.split(",") if url.strip()]
+if frontend_urls:
+    origins.extend(frontend_urls)
+    logger.info(f"CORS: Added production origins: {frontend_urls}")
+    print(f"DIAGNOSTIC: FRONTEND_URL found: {frontend_urls}", flush=True)
 else:
     logger.warning("CORS: No FRONTEND_URL found in environment variables.")
     print("DIAGNOSTIC: No FRONTEND_URL found.", flush=True)
@@ -58,6 +59,7 @@ else:
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -77,7 +79,8 @@ def read_root():
         "status": "healthy",
         "service": "Diet Engine Backend",
         "version": "1.0.0",
-        "environment": os.getenv("ENV", "development")
+        "environment": os.getenv("ENV", "development"),
+        "cors_frontends_configured": frontend_urls,
     }
 
 @app.get("/diagnostics")
@@ -87,8 +90,9 @@ def diagnostics():
     """
     return {
         "environment": os.getenv("ENV", "development"),
-        "frontend_url_env": frontend_url,
+        "frontend_url_env": frontend_urls,
         "cors_origins": origins,
+        "cors_origin_regex": r"https://.*\.vercel\.app",
     }
 
 @app.get("/diagnostics/llm")

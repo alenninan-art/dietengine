@@ -7,9 +7,14 @@ import base64
 import json
 import io
 import re
+import logging
+from threading import Lock
 import google.generativeai as genai
 from PIL import Image, UnidentifiedImageError
-from ultralytics import YOLO
+try:
+    from ultralytics import YOLO
+except ImportError:
+    YOLO = None
 from .auth import get_current_user
 from .. import models, models_recommendations
 from dotenv import load_dotenv
@@ -25,13 +30,16 @@ router = APIRouter(
     tags=["ai"]
 )
 
-# Initialize YOLOv8 Model (downloads automatically if not present)
-# Using yolov8s.pt (Small) for better accuracy over the Nano variant
-try:
-    yolo_model = YOLO('yolov8s.pt') 
-except Exception as e:
-    print(f"WARNING: YOLO initialization failed: {e}")
-    yolo_model = None
+logger = logging.getLogger(__name__)
+
+MAX_IMAGE_UPLOAD_BYTES = int(os.getenv("AI_MAX_IMAGE_UPLOAD_BYTES", str(5 * 1024 * 1024)))
+MAX_IMAGE_ANALYSIS_CONCURRENCY = max(1, int(os.getenv("AI_MAX_CONCURRENT_ANALYSES", "2")))
+YOLO_ENABLED = os.getenv("ENABLE_LOCAL_YOLO", "true").lower() in {"1", "true", "yes", "on"}
+YOLO_MODEL_PATH = os.getenv("YOLO_MODEL_PATH", "yolov8n.pt")
+
+analysis_semaphore = asyncio.Semaphore(MAX_IMAGE_ANALYSIS_CONCURRENCY)
+yolo_model = None
+yolo_model_lock = Lock()
 
 # Professional Food Database (Per Standard Serving) - FALLBACK
 FOOD_DATABASE = {
@@ -133,28 +141,36 @@ async def run_yolo_detection(image_bytes: bytes) -> list:
     """Run YOLOv8 on the image to identify objects for better hint generation"""
     global yolo_model
 
-    if not yolo_model:
+    if not YOLO_ENABLED or YOLO is None:
         return []
-    
+
+    if not yolo_model:
+        with yolo_model_lock:
+            if not yolo_model:
+                try:
+                    yolo_model = YOLO(YOLO_MODEL_PATH)
+                    logger.info("Loaded YOLO model from %s", YOLO_MODEL_PATH)
+                except Exception as e:
+                    logger.warning("YOLO initialization failed: %s", e)
+                    yolo_model = None
+                    return []
+
     try:
-        # Load image for YOLO
-        img = load_raster_image(image_bytes)
-        results = yolo_model(img, verbose=False, conf=0.25)  # Lower conf threshold for more detections
-        
-        # Extract detected class names
-        detected_items = []
-        for result in results:
-            for box in result.boxes:
-                cls_id = int(box.cls[0])
-                name = result.names[cls_id]
-                detected_items.append(name)
-        
-        # Return unique items
-        return list(set(detected_items))
+        with load_raster_image(image_bytes) as img:
+            results = yolo_model(img, verbose=False, conf=0.25)
+
+            detected_items = []
+            for result in results:
+                for box in result.boxes:
+                    cls_id = int(box.cls[0])
+                    name = result.names[cls_id]
+                    detected_items.append(name)
+
+            return list(set(detected_items))
     except UnidentifiedImageError:
         return []
     except Exception as e:
-        print(f"YOLO detection failed: {e}")
+        logger.warning("YOLO detection failed: %s", e)
         if "pi_heif" in str(e):
             # Avoid repeated autoinstall attempts from Ultralytics/Pillow edge cases.
             yolo_model = None
@@ -372,11 +388,8 @@ def call_gemini_vision_sync(api_key: str, image_bytes: bytes, yolo_hints: list):
             "Output ONLY valid JSON."
         )
         
-        # Open image for Gemini
-        img = Image.open(io.BytesIO(image_bytes))
-        
-        # Gemini 1.5 handles image + text in the same list
-        response = model.generate_content([prompt, img])
+        with load_raster_image(image_bytes) as img:
+            response = model.generate_content([prompt, img])
         
         # Clean up the response to ensure it's valid JSON
         text = response.text.strip()
@@ -407,36 +420,69 @@ async def estimate_calories(
     openai_settings = get_openai_settings()
     api_key_openai = openai_settings["api_key"]
     api_key_gemini = os.getenv("GEMINI_API_KEY")
-    
-    with open("ai_debug.log", "a") as f:
-        f.write(f"\n--- AI Analysis Request (Optimized) ---\n")
-        f.write(f"OPENAI_API_KEY present: {'Yes' if api_key_openai else 'No'}\n")
-        f.write(f"GEMINI_API_KEY present: {'Yes' if api_key_gemini else 'No'}\n")
-        
-    if not api_key_openai and not api_key_gemini:
-        print("WARNING: No API keys found. Using YOLO-enhanced mock analysis.")
-        contents = await file.read()
-        yolo_hints = await run_yolo_detection(contents)
-        return await get_mock_analysis(file.filename, yolo_hints, db)
-        
-    try:
-        print("DEBUG: Processing image...")
-        contents = await file.read()
-        
-        # Run YOLO in background to provide hints
-        yolo_hints = await run_yolo_detection(contents)
-        print(f"DEBUG: YOLO Hints: {yolo_hints}")
-        
-        loop = asyncio.get_event_loop()
-        
-        # Prioritize Gemini
-        if api_key_gemini:
-            try:
-                print("DEBUG: Starting Gemini Vision API call...")
-                result_content = await loop.run_in_executor(None, call_gemini_vision_sync, api_key_gemini, contents, yolo_hints)
-                print(f"DEBUG: Gemini Response: {result_content}")
-                
+
+    logger.info(
+        "AI analysis request received: filename=%s content_type=%s openai_configured=%s gemini_configured=%s",
+        file.filename,
+        file.content_type,
+        bool(api_key_openai),
+        bool(api_key_gemini),
+    )
+
+    async with analysis_semaphore:
+        contents = b""
+        yolo_hints: list[str] = []
+        try:
+            contents = await file.read()
+            if len(contents) > MAX_IMAGE_UPLOAD_BYTES:
+                raise HTTPException(
+                    status_code=413,
+                    detail=f"Image is too large. Maximum upload size is {MAX_IMAGE_UPLOAD_BYTES // (1024 * 1024)} MB.",
+                )
+
+            if not api_key_openai and not api_key_gemini:
+                logger.warning("No API keys found. Using local fallback analysis.")
+                yolo_hints = await run_yolo_detection(contents)
+                return await get_mock_analysis(file.filename, yolo_hints, db)
+
+            yolo_hints = await run_yolo_detection(contents)
+            loop = asyncio.get_running_loop()
+
+            if api_key_gemini:
+                try:
+                    result_content = await loop.run_in_executor(
+                        None,
+                        call_gemini_vision_sync,
+                        api_key_gemini,
+                        contents,
+                        yolo_hints,
+                    )
+                    ai_data = json.loads(result_content)
+                    return {
+                        "detection": {
+                            "food_item": ai_data.get("food_item", "Unknown Dish"),
+                            "confidence": ai_data.get("confidence", 0.9),
+                            "portion_unit": ai_data.get("portion_unit", "serving"),
+                            "breakdown": ai_data.get("breakdown", [])
+                        },
+                        "analysis": {
+                            "estimated_portion": ai_data.get("estimated_portion", "Medium"),
+                            "nutrition": ai_data.get("nutrition", {"calories": 0, "protein": 0, "carbs": 0, "fats": 0}),
+                            "standards_database": "Gemini Vision Analysis (Free Tier Mode)",
+                            "is_fallback": False,
+                            "provider": "gemini"
+                        },
+                        "disclaimer": "NOTE: These values are AI-generated estimations based on visual content.",
+                        "message": f"AI successfully identified {ai_data.get('food_item', 'dish')}."
+                    }
+                except Exception as gem_err:
+                    logger.warning("Gemini Vision call failed: %s", gem_err)
+
+            if api_key_openai:
+                base64_image = await loop.run_in_executor(None, process_image, contents)
+                result_content = await loop.run_in_executor(None, call_openai_sync, base64_image, yolo_hints)
                 ai_data = json.loads(result_content)
+
                 return {
                     "detection": {
                         "food_item": ai_data.get("food_item", "Unknown Dish"),
@@ -444,52 +490,24 @@ async def estimate_calories(
                         "portion_unit": ai_data.get("portion_unit", "serving"),
                         "breakdown": ai_data.get("breakdown", [])
                     },
-                    "analysis": {
-                        "estimated_portion": ai_data.get("estimated_portion", "Medium"),
-                        "nutrition": ai_data.get("nutrition", {"calories": 0, "protein": 0, "carbs": 0, "fats": 0}),
-                        "standards_database": "Gemini Vision Analysis (Free Tier Mode)",
-                        "is_fallback": False,
-                        "provider": "gemini"
-                    },
+                        "analysis": {
+                            "estimated_portion": ai_data.get("estimated_portion", "Medium"),
+                            "nutrition": ai_data.get("nutrition", {"calories": 0, "protein": 0, "carbs": 0, "fats": 0}),
+                            "standards_database": "OpenAI Vision Analysis",
+                            "is_fallback": False,
+                            "provider": openai_settings["provider"] or "openai"
+                        },
                     "disclaimer": "NOTE: These values are AI-generated estimations based on visual content.",
                     "message": f"AI successfully identified {ai_data.get('food_item', 'dish')}."
                 }
-            except Exception as gem_err:
-                print(f"Gemini Vision call failed: {gem_err}")
-                # Fall through to OpenAI
 
-        if api_key_openai:
-            # Optimize image for OpenAI
-            base64_image = await loop.run_in_executor(None, process_image, contents)
-            
-            print("DEBUG: Starting OpenAI API call...") 
-            result_content = await loop.run_in_executor(None, call_openai_sync, base64_image, yolo_hints)
-            
-            print(f"DEBUG: OpenAI Response: {result_content}") 
-            ai_data = json.loads(result_content)
-            
-            return {
-                "detection": {
-                    "food_item": ai_data.get("food_item", "Unknown Dish"),
-                    "confidence": ai_data.get("confidence", 0.9),
-                    "portion_unit": ai_data.get("portion_unit", "serving"),
-                    "breakdown": ai_data.get("breakdown", [])
-                },
-                    "analysis": {
-                        "estimated_portion": ai_data.get("estimated_portion", "Medium"),
-                        "nutrition": ai_data.get("nutrition", {"calories": 0, "protein": 0, "carbs": 0, "fats": 0}),
-                        "standards_database": "OpenAI Vision Analysis",
-                        "is_fallback": False,
-                        "provider": openai_settings["provider"] or "openai"
-                    },
-                "disclaimer": "NOTE: These values are AI-generated estimations based on visual content.",
-                "message": f"AI successfully identified {ai_data.get('food_item', 'dish')}."
-            }
-            
-        # If neither worked, fallback to mock
-        return await get_mock_analysis(file.filename, yolo_hints, db)
-        
-    except Exception as e:
-        print(f"ERROR: AI Analysis failed: {str(e)}")
-        # Fallback to mock if API fails
-        return await get_mock_analysis(file.filename, yolo_hints, db)
+            return await get_mock_analysis(file.filename, yolo_hints, db)
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.exception("AI analysis failed: %s", e)
+            return await get_mock_analysis(file.filename, yolo_hints, db)
+        finally:
+            await file.close()
+            contents = b""
